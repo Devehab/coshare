@@ -58,13 +58,14 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 	<key>LSUIElement</key><true/>
 	<key>NSHighResolutionCapable</key><true/>
 	<key>NSLocalNetworkUsageDescription</key><string>CoShare يتصل بأجهزتك على نفس شبكة الواي فاي لمشاركة النسخ واللصق.</string>
+	<key>NSCameraUsageDescription</key><string>CoShare يستخدم الكاميرا فقط لمسح رمز QR للانضمام لمجموعة.</string>
 	<key>NSBonjourServices</key><array><string>_coshare._tcp</string></array>
 </dict>
 </plist>
 PLIST
 
 # Ad-hoc signature: enough to run on your own Macs.
-codesign --force --sign - --timestamp=none "$APP"
+codesign --force --sign - --timestamp=none --entitlements Config/macOS.entitlements "$APP"
 ditto -c -k --keepParent "$APP" build/CoShare-mac.zip
 echo "✓ Built $APP ($(lipo -archs "$APP/Contents/MacOS/CoShare"))"
 echo "✓ Zip for other Macs: build/CoShare-mac.zip"

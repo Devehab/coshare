@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>CoShare يستخدم الكاميرا فقط لمسح رمز QR للانضمام لمجموعة.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>CoShare يتصل بأجهزتك على نفس شبكة الواي فاي لمشاركة النسخ واللصق.</string>
 	<key>NSBonjourServices</key>

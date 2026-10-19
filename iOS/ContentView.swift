@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var copiedID: UUID?
     @State private var busy = false
     @State private var showGroups = false
+    @State private var showScanner = false
     @State private var pendingInvite: GroupMembership?
 
     var body: some View {
@@ -46,8 +47,16 @@ struct ContentView: View {
                             Text("أنشئ مجموعة جديدة بكلمة سر، أو انضم لمجموعة موجودة على نفس الشبكة.")
                                 .font(.callout)
                                 .foregroundColor(.secondary)
-                            Button("إعداد المجموعات") { showGroups = true }
-                                .buttonStyle(.borderedProminent)
+                            HStack {
+                                Button("إعداد المجموعات") { showGroups = true }
+                                    .buttonStyle(.borderedProminent)
+                                Button {
+                                    showScanner = true
+                                } label: {
+                                    Label("انضمام بـ QR", systemImage: "qrcode.viewfinder")
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
                         .padding(.vertical, 4)
                     } else {
@@ -122,6 +131,9 @@ struct ContentView: View {
                 GroupsView()
                     .environmentObject(engine)
                     .environmentObject(settings)
+            }
+            .sheet(isPresented: $showScanner) {
+                QRJoinSheet().environmentObject(engine)
             }
             .alert("الانضمام لمجموعة «\(pendingInvite?.name ?? "")»؟",
                    isPresented: Binding(get: { pendingInvite != nil }, set: { if !$0 { pendingInvite = nil } }),
@@ -257,14 +269,38 @@ struct SettingsView: View {
     }
 }
 
-struct GroupsView: View {
-    @EnvironmentObject private var engine: SyncEngine
-    @EnvironmentObject private var settings: AppSettings
+struct QRJoinSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
+            QRJoinView { dismiss() }
+                .padding(20)
+                .navigationTitle("انضمام بمسح QR")
+                .navigationBarTitleDisplayMode(.inline)
+        }
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+}
+
+struct GroupsView: View {
+    @EnvironmentObject private var engine: SyncEngine
+    @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
+    @State private var showScanner = false
+
+    var body: some View {
+        NavigationStack {
             Form {
+                Section {
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Label("انضمام بمسح رمز QR", systemImage: "qrcode.viewfinder")
+                    }
+                } footer: {
+                    Text("على جهاز بالمجموعة افتح المجموعة واضغط «دعوة جهاز»، وامسح الرمز اللي بيطلع.")
+                }
                 if !settings.groups.isEmpty {
                     Section("مجموعاتي") {
                         ForEach(settings.groups) { GroupCard(group: $0).listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)) }
@@ -286,6 +322,9 @@ struct GroupsView: View {
             }
             .navigationTitle("المجموعات")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showScanner) {
+                QRJoinSheet().environmentObject(engine)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("تم") { dismiss() }

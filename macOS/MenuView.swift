@@ -8,6 +8,7 @@ struct MenuView: View {
 
     @State private var tab: Tab
     @State private var copiedID: UUID?
+    @State private var scanningQR = false
 
     init(tab: Tab = .history) {
         _tab = State(initialValue: tab)
@@ -149,6 +150,19 @@ struct MenuView: View {
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange.opacity(0.12)))
+                }
+                if scanningQR {
+                    sectionTitle("انضمام بمسح رمز QR")
+                    QRJoinView { scanningQR = false }
+                } else {
+                    Button {
+                        scanningQR = true
+                    } label: {
+                        Label("انضمام بمسح رمز QR بالكاميرا", systemImage: "qrcode.viewfinder")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
                 }
                 if !settings.groups.isEmpty {
                     sectionTitle("مجموعاتي")

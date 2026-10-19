@@ -8,11 +8,13 @@
 //   join <group> <password>     join a group seen on the network
 //   leave <group>               leave a group
 //   groups | nearby | peers | history   print state
+//   qrtest                      encode an invite as QR, decode it with Vision, check it round-trips
 // COSHARE_NO_BONJOUR=1 disables Bonjour (direct mode), COSHARE_PORT=<n> sets the listening port,
 // COSHARE_HOSTS=host:port,… are extra addresses to greet (like a hotspot gateway).
 //   quit
 // Build & run: scripts/test-peer.sh
 import Foundation
+import Vision
 
 typealias PlatformPasteboard = FakePasteboard
 
@@ -113,6 +115,16 @@ final class CommandReader {
             guard let group = engine.settings.groups.first(where: { $0.name == argument }) else { say("LEAVE no such group"); return }
             engine.leave(group)
             say("LEAVE ok")
+        case "qrtest":
+            let invite = GroupMembership(id: GroupMembership.newID(), name: "أجهزة إيهاب · Test", password: "p@ss wörd/&=?#1", joinedAt: Date())
+            let url = GroupInvite.url(for: invite)
+            for scale in [10.0, 4.0, 2.0] {
+                guard let image = GroupInvite.qrImage(for: url, scale: scale) else { say("QR encode failed"); return }
+                let payload = QRScanner.detect(in: VNImageRequestHandler(cgImage: image, options: [:]))
+                let decoded = payload.flatMap(URL.init(string:)).flatMap(GroupInvite.parse)
+                let ok = decoded?.id == invite.id && decoded?.name == invite.name && decoded?.password == invite.password
+                say("QRTEST \(image.width)px decoded=\(payload != nil) roundtrip=\(ok)")
+            }
         case "groups":
             say("GROUPS " + engine.settings.groups.map { "\($0.name)[\(engine.members(of: $0).map(\.name).joined(separator: ","))]" }.joined(separator: " "))
         case "nearby":
