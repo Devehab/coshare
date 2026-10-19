@@ -56,7 +56,12 @@ struct MenuBarLabel: View {
         switch engine.pulse {
         case .sent: return "arrow.up.circle.fill"
         case .received: return "arrow.down.circle.fill"
-        case .idle: return settings.paused ? "pause.circle" : "doc.on.clipboard"
+        case .idle:
+            switch engine.presence {
+            case .online: return "doc.on.clipboard"
+            case .paused: return "pause.circle"
+            case .quiet: return "moon.zzz"
+            }
         }
     }
 }

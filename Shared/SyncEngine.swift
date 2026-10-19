@@ -25,6 +25,8 @@ final class SyncEngine: ObservableObject {
 
     @Published private(set) var peers: [Peer] = []
     @Published private(set) var pulse: Pulse = .idle
+    /// Online, paused, or inside the quiet schedule — when not online nothing touches the network.
+    @Published private(set) var presence: NetworkPresence = .online
     @Published private(set) var isStarted = false
 
     let settings: AppSettings
@@ -38,6 +40,7 @@ final class SyncEngine: ObservableObject {
     private var networkGeneration = 0
     private var pollTimer: Timer?
     private var maintenanceTimer: Timer?
+    private var presenceTimer: Timer?
     private var pulseTask: Task<Void, Never>?
     private var lastChangeCount = -1
     private var lastReportedProblemCount = -1
@@ -153,7 +156,23 @@ final class SyncEngine: ObservableObject {
         log.add("بدأ CoShare على «\(settings.deviceName)»")
         // Whatever was copied before launch is old news; only new copies are shared.
         lastChangeCount = pasteboard.changeCount
-        startNetwork()
+        // During quiet hours the app starts without touching the network at all.
+        presence = computePresence()
+        if presence.isOnline {
+            startNetwork()
+        } else {
+            log.add(offlineMessage(presence))
+        }
+        let presenceCheck = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updatePresence() }
+        }
+        RunLoop.main.add(presenceCheck, forMode: .common)
+        presenceTimer = presenceCheck
+        Publishers.CombineLatest4(settings.$paused, settings.$quietEnabled, settings.$quietSchedule, settings.$resumedWindowStart)
+            .dropFirst()
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+            .sink { [weak self] _ in self?.scheduleChanged() }
+            .store(in: &cancellables)
 
         let poll = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.pollNow() }
@@ -186,16 +205,94 @@ final class SyncEngine: ObservableObject {
     }
 
     func restartNetwork() {
-        guard isStarted else { return }
+        guard isStarted, presence.isOnline else { return }
         startNetwork()
     }
 
     /// Looks for devices again without dropping the current connections.
     func refreshDiscovery() {
+        guard presence.isOnline else { return }
         network.refreshDiscovery()
     }
 
+    // MARK: Quiet hours / pause
+
+    /// Back online for the rest of the current quiet window (the schedule applies again next time).
+    func resumeToday() {
+        if settings.paused { settings.paused = false }
+        if settings.quietEnabled, let window = settings.quietSchedule.window(containing: Date()) {
+            settings.resumedWindowStart = window.start
+        }
+        updatePresence()
+    }
+
+    private func computePresence(at now: Date = Date()) -> NetworkPresence {
+        if settings.paused { return .paused }
+        guard settings.quietEnabled, let window = settings.quietSchedule.window(containing: now) else { return .online }
+        if settings.resumedWindowStart == window.start { return .online }
+        return .quiet(until: window.end)
+    }
+
+    private func scheduleChanged() {
+        let before = presence
+        updatePresence()
+        // Still online: re-advertise so other devices learn the new schedule.
+        if before.isOnline && presence.isOnline { restartNetwork() }
+    }
+
+    private func updatePresence() {
+        let now = computePresence()
+        guard now != presence else { return }
+        let wasOnline = presence.isOnline
+        presence = now
+        if wasOnline && !now.isOnline {
+            goOffline(now)
+        } else if !wasOnline && now.isOnline {
+            comeBack()
+        } else {
+            log.add(offlineMessage(now))
+        }
+    }
+
+    private func offlineMessage(_ state: NetworkPresence) -> String {
+        switch state {
+        case .online: return "CoShare متصل بالشبكة"
+        case .paused: return "متوقف — CoShare منفصل تماماً عن الشبكة"
+        case .quiet(let until): return "وقت الإيقاف — CoShare منفصل تماماً عن الشبكة حتى \(Format.clock(until))"
+        }
+    }
+
+    /// Tells the group "quiet until …" once, then closes every socket: no listening, no Bonjour,
+    /// no probes, no clipboard reading until it's time to come back.
+    private func goOffline(_ state: NetworkPresence) {
+        log.add(offlineMessage(state))
+        networkGeneration += 1
+        let targets = connectedPeers
+        var until: Date?
+        if case .quiet(let end) = state { until = end }
+        Task {
+            if let me = identity, !targets.isEmpty {
+                var bye = header(.bye, me)
+                bye.quietUntil = until
+                bye.listenPort = network.currentListenPort
+                _ = await exchange(WireMessage(header: bye), with: targets, timeout: 3)
+            }
+            guard !presence.isOnline else { return }
+            network.stop()
+            identity = nil
+        }
+    }
+
+    private func comeBack() {
+        // Copies made while away stay on this device, and nothing from that time is pulled in.
+        lastChangeCount = pasteboard.changeCount
+        currentDate = max(currentDate, Date())
+        log.add("رجع CoShare للشبكة")
+        startNetwork()
+    }
+
     private func startNetwork() {
+        guard presence.isOnline else { return }
         networkGeneration += 1
         let generation = networkGeneration
         let trimmedName = settings.deviceName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -203,13 +300,14 @@ final class SyncEngine: ObservableObject {
         let memberships = settings.groups
         let id = settings.deviceID
         let platform = DevicePlatform.current
+        let quiet = settings.quietEnabled ? settings.quietSchedule : nil
         Task {
             var secrets: [GroupSecret] = []
             for group in memberships {
                 secrets.append(GroupSecret(membership: group, key: await deriveKey(groupID: group.id, password: group.password)))
             }
-            guard generation == self.networkGeneration else { return }
-            let me = LocalIdentity(id: id, name: name, platform: platform, groups: secrets)
+            guard generation == self.networkGeneration, self.presence.isOnline else { return }
+            let me = LocalIdentity(id: id, name: name, platform: platform, groups: secrets, quiet: quiet)
             self.identity = me
             self.network.start(me)
         }
@@ -217,7 +315,7 @@ final class SyncEngine: ObservableObject {
 
     private func networkPathChanged(_ signature: String) {
         defer { lastPathSignature = signature }
-        guard let last = lastPathSignature, last != signature, signature != "offline" else { return }
+        guard presence.isOnline, let last = lastPathSignature, last != signature, signature != "offline" else { return }
         log.add("تغيّرت الشبكة — إعادة الاتصال")
         restartNetwork()
     }
@@ -251,7 +349,7 @@ final class SyncEngine: ObservableObject {
         let count = pasteboard.changeCount
         guard force || count != lastChangeCount else { return false }
         lastChangeCount = count
-        guard !settings.paused else { return false }
+        guard presence.isOnline else { return false }
         guard let content = pasteboard.read(includeImages: settings.syncImages,
                                             maxImageBytes: settings.maxImageBytes,
                                             skipConcealed: settings.skipConcealed)
@@ -273,6 +371,10 @@ final class SyncEngine: ObservableObject {
     /// Sends whatever is on the clipboard right now, even if it was already sent.
     @discardableResult
     func sendCurrentClipboard() async -> Int {
+        guard presence.isOnline else {
+            log.add("ما انبعت شي — \(offlineMessage(presence))")
+            return 0
+        }
         guard let content = pasteboard.read(includeImages: settings.syncImages,
                                             maxImageBytes: settings.maxImageBytes,
                                             skipConcealed: false)
@@ -287,6 +389,10 @@ final class SyncEngine: ObservableObject {
     /// Sends arbitrary content (used by Shortcuts actions), optionally putting it on this clipboard too.
     @discardableResult
     func send(_ content: ClipContent, copyLocally: Bool) async -> Int {
+        guard presence.isOnline else {
+            log.add("ما انبعت شي — \(offlineMessage(presence))")
+            return 0
+        }
         if copyLocally {
             pasteboard.write(content)
             lastChangeCount = pasteboard.changeCount
@@ -349,7 +455,7 @@ final class SyncEngine: ObservableObject {
             let meta = ClipMeta(id: item.id, kind: item.kind, uti: item.uti, hash: item.hash, createdAt: item.date,
                                 origin: item.deviceName)
             return WireMessage(header: header(.latest, me, clip: meta), payload: content.payload)
-        case .ack, .latest, .nothing, .hello:
+        case .ack, .latest, .nothing, .hello, .bye:
             return WireMessage(header: header(.ack, me))
         }
     }
@@ -359,10 +465,7 @@ final class SyncEngine: ObservableObject {
         guard !seenClipIDs.contains(meta.id) else { return false }
         seenClipIDs.append(meta.id)
         if seenClipIDs.count > 200 { seenClipIDs.removeFirst(50) }
-        guard !settings.paused else {
-            log.add("تم تجاهل نسخة من \(sender) لأن المزامنة متوقفة مؤقتاً")
-            return false
-        }
+        guard presence.isOnline else { return false }
         guard meta.hash != currentHash else { return false }
         guard content.kind == .text || settings.syncImages else { return false }
 
@@ -380,7 +483,7 @@ final class SyncEngine: ObservableObject {
     /// Used when the iPhone app returns to the foreground and whenever a device (re)appears.
     @discardableResult
     func pullLatest(from specificPeers: [Peer]? = nil) async -> Bool {
-        guard let me = await readyIdentity() else { return false }
+        guard presence.isOnline, let me = await readyIdentity() else { return false }
         if specificPeers == nil { await waitForPeers(timeout: 3) }
         let targets = specificPeers ?? connectedPeers
         guard !targets.isEmpty else { return false }

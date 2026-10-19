@@ -10,6 +10,8 @@ struct Peer: Identifiable, Equatable, @unchecked Sendable {
     var endpoint: NWEndpoint
     /// Found by contacting its address directly rather than through Bonjour (hotspots, filtered networks).
     var isDirect: Bool
+    /// Hours when that device is off the network on purpose.
+    var quiet: QuietSchedule? = nil
 }
 
 struct LocalIdentity: @unchecked Sendable {
@@ -17,6 +19,8 @@ struct LocalIdentity: @unchecked Sendable {
     let name: String
     let platform: DevicePlatform
     let groups: [GroupSecret]
+    /// Shared with other devices so they don't call during these hours.
+    var quiet: QuietSchedule? = nil
 
     /// Opens a frame with whichever of our group keys fits; nil if it belongs to no group of ours.
     func open(_ sealed: Data) -> (WireMessage, GroupSecret)? {
@@ -46,6 +50,8 @@ final class PeerNetwork: @unchecked Sendable {
     private let queue = DispatchQueue(label: "coshare.network", qos: .userInitiated)
     private var listener: NWListener?
     private var listenPort: UInt16 = 0
+    /// The port we listen on, sent along in a bye so the other side can stop calling it.
+    var currentListenPort: UInt16 { queue.sync { listenPort } }
     private var browser: NWBrowser?
     private var probe: NWBrowser?
     private var timers: [DispatchSourceTimer] = []
@@ -54,6 +60,9 @@ final class PeerNetwork: @unchecked Sendable {
     private var browsedPeers: [String: Peer] = [:]
     private var probedPeers: [String: Peer] = [:]
     private var directPeers: [String: (peer: Peer, seen: Date)] = [:]
+    /// Devices that said "bye, quiet until …", and the addresses they said it from.
+    private var silenced: [String: Date] = [:]
+    private var silencedAddresses: [String: (deviceID: String, until: Date)] = [:]
     private var generation = 0
     private let lock = NSLock()
     private var _identity: LocalIdentity?
@@ -136,6 +145,7 @@ final class PeerNetwork: @unchecked Sendable {
                 txt["i"] = me.id
                 txt["v"] = "2"
                 for (index, group) in me.groups.prefix(8).enumerated() { txt["g\(index)"] = group.advertised.txtValue }
+                if let quiet = me.quiet { txt["q"] = quiet.txtValue }
                 listener.service = NWListener.Service(name: me.id, type: Self.serviceType, domain: nil, txtRecord: txt)
             }
             listener.newConnectionHandler = { [weak self] connection in self?.serve(connection) }
@@ -200,6 +210,10 @@ final class PeerNetwork: @unchecked Sendable {
                 if request.header.type == .hello {
                     learnDirectPeer(request.header, remote: connection.endpoint, group: group)
                     reply = helloMessage(me)
+                } else if request.header.type == .bye {
+                    silence(request.header.senderID, until: request.header.quietUntil, name: request.header.senderName,
+                            from: connection.endpoint, listenPort: request.header.listenPort)
+                    reply = WireMessage(header: WireHeader(type: .ack, senderID: me.id, senderName: me.name, platform: me.platform))
                 } else {
                     reply = await onRequest?(request, group)
                 }
@@ -284,9 +298,13 @@ final class PeerNetwork: @unchecked Sendable {
             // Skip ourselves — including a second copy of this app, which Bonjour renames "<id> (2)".
             if name == me.id || txt["i"] == me.id || name.hasPrefix(me.id + " (") { continue }
             let groups = (0..<8).compactMap { txt["g\($0)"].flatMap(AdvertisedGroup.init(txtValue:)) }
-            byID[txt["i"] ?? name] = Peer(id: txt["i"] ?? name, name: txt["n"] ?? name,
-                                          platform: DevicePlatform(rawValue: txt["p"] ?? "") ?? .mac,
-                                          groups: groups, endpoint: result.endpoint, isDirect: false)
+            let id = txt["i"] ?? name
+            let quiet = txt["q"].flatMap(QuietSchedule.init(txtValue:))
+            byID[id] = Peer(id: id, name: txt["n"] ?? name, platform: DevicePlatform(rawValue: txt["p"] ?? "") ?? .mac,
+                            groups: groups, endpoint: result.endpoint, isDirect: false, quiet: quiet)
+            // Advertising again means it is back (e.g. "resume today").
+            unsilence(id)
+            saveSchedule(quiet, for: id)
         }
         return byID
     }
@@ -295,7 +313,7 @@ final class PeerNetwork: @unchecked Sendable {
 
     private func helloMessage(_ me: LocalIdentity) -> WireMessage {
         WireMessage(header: WireHeader(type: .hello, senderID: me.id, senderName: me.name, platform: me.platform,
-                                       clip: nil, listenPort: listenPort, groups: me.groups.map(\.advertised)))
+                                       clip: nil, listenPort: listenPort, groups: me.groups.map(\.advertised), quiet: me.quiet))
     }
 
     /// Says hello to the gateway and to every address a group member had before. Whoever answers
@@ -303,8 +321,14 @@ final class PeerNetwork: @unchecked Sendable {
     private func runDirectProbe() {
         guard let me = identity, !me.groups.isEmpty else { return }
         let gen = generation
-        let known = Set(knownHosts().values)
-        let hosts = Set(gateways).union(known).union(AppEnvironment.current.extraHosts)
+        let known = knownHosts()
+        // Never call a device during its quiet hours (or after it said bye): even a refused
+        // connection would show up as traffic on a monitored work computer.
+        let quietHosts = Set(known.filter { isQuiet($0.key) }.values)
+        let now = Date()
+        let silencedHosts = Set(silencedAddresses.filter { $0.value.until > now }.keys)
+        let hosts = Set(gateways).union(known.values).union(AppEnvironment.current.extraHosts)
+            .subtracting(quietHosts).subtracting(silencedHosts)
         for host in hosts {
             Task { await self.sayHello(to: host, me: me, gen: gen) }
         }
@@ -335,9 +359,11 @@ final class PeerNetwork: @unchecked Sendable {
                 queue.async { [self] in
                     guard gen == generation else { return }
                     let isNew = directPeers[reply.header.senderID] == nil
+                    unsilence(reply.header.senderID)
+                    saveSchedule(reply.header.quiet, for: reply.header.senderID)
                     directPeers[reply.header.senderID] = (Peer(id: reply.header.senderID, name: reply.header.senderName,
                                                               platform: reply.header.platform, groups: reply.header.groups ?? [],
-                                                              endpoint: endpoint, isDirect: true), Date())
+                                                              endpoint: endpoint, isDirect: true, quiet: reply.header.quiet), Date())
                     saveKnownHost(address, for: reply.header.senderID)
                     if isNew { publishMerged() }
                 }
@@ -357,9 +383,12 @@ final class PeerNetwork: @unchecked Sendable {
         let hostString = "\(host)".components(separatedBy: "%").first ?? "\(host)"
         queue.async { [self] in
             let isNew = directPeers[header.senderID] == nil
+            unsilence(header.senderID)
+            saveSchedule(header.quiet, for: header.senderID)
             directPeers[header.senderID] = (Peer(id: header.senderID, name: header.senderName, platform: header.platform,
                                                 groups: header.groups ?? [group.advertised],
-                                                endpoint: .hostPort(host: host, port: nwPort), isDirect: true), Date())
+                                                endpoint: .hostPort(host: host, port: nwPort), isDirect: true,
+                                                quiet: header.quiet), Date())
             saveKnownHost(hostString, for: header.senderID)
             if isNew { publishMerged() }
         }
@@ -369,6 +398,43 @@ final class PeerNetwork: @unchecked Sendable {
         guard case let .hostPort(host, _)? = connection.currentPath?.remoteEndpoint else { return }
         let hostString = "\(host)".components(separatedBy: "%").first ?? "\(host)"
         queue.async { [self] in saveKnownHost(hostString, for: peerID) }
+    }
+
+    private func silence(_ deviceID: String, until: Date?, name: String, from remote: NWEndpoint, listenPort: UInt16?) {
+        queue.async { [self] in
+            let until = until ?? Date().addingTimeInterval(12 * 3600)
+            silenced[deviceID] = until
+            // Also its address, in case we only know it as an address (gateway, not yet greeted).
+            if case let .hostPort(host, _) = remote {
+                let hostString = "\(host)".components(separatedBy: "%").first ?? "\(host)"
+                silencedAddresses[hostString] = (deviceID, until)
+                if let listenPort { silencedAddresses["\(hostString):\(listenPort)"] = (deviceID, until) }
+            }
+            directPeers.removeValue(forKey: deviceID)
+            browsedPeers.removeValue(forKey: deviceID)
+            probedPeers.removeValue(forKey: deviceID)
+            publishMerged()
+        }
+        emit("«\(name)» دخل وقت الإيقاف — لن نتصل به حتى يعود")
+    }
+
+    private func unsilence(_ deviceID: String) {
+        silenced.removeValue(forKey: deviceID)
+        silencedAddresses = silencedAddresses.filter { $0.value.deviceID != deviceID }
+    }
+
+    /// Said bye recently, or inside the quiet hours it told us about.
+    private func isQuiet(_ deviceID: String) -> Bool {
+        if let until = silenced[deviceID], until > Date() { return true }
+        let schedules = AppEnvironment.current.defaults.dictionary(forKey: "peerSchedules") as? [String: String] ?? [:]
+        return schedules[deviceID].flatMap(QuietSchedule.init(txtValue:))?.window(containing: Date()) != nil
+    }
+
+    private func saveSchedule(_ quiet: QuietSchedule?, for deviceID: String) {
+        var schedules = AppEnvironment.current.defaults.dictionary(forKey: "peerSchedules") as? [String: String] ?? [:]
+        guard schedules[deviceID] != quiet?.txtValue else { return }
+        schedules[deviceID] = quiet?.txtValue
+        AppEnvironment.current.defaults.set(schedules, forKey: "peerSchedules")
     }
 
     private func knownHosts() -> [String: String] {
@@ -388,7 +454,8 @@ final class PeerNetwork: @unchecked Sendable {
     // MARK: Helpers
 
     private func publishMerged() {
-        var merged: [String: Peer] = directPeers.mapValues(\.peer)
+        // A device that said bye stays out until it is back (advertises or says hello again).
+        var merged: [String: Peer] = directPeers.filter { (silenced[$0.key] ?? .distantPast) <= Date() }.mapValues(\.peer)
         for (id, peer) in probedPeers { merged[id] = peer }
         for (id, peer) in browsedPeers { merged[id] = peer }
         if let me = identity { merged.removeValue(forKey: me.id) }

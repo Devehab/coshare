@@ -7,6 +7,7 @@ enum MessageType: String, Codable {
     case latest      // reply to pullLatest, carries a clip
     case nothing     // reply to pullLatest when history is empty
     case hello       // direct contact without Bonjour (e.g. on a phone's hotspot); carries port + groups
+    case bye         // "going quiet until …": stop contacting me
 }
 
 struct ClipMeta: Codable {
@@ -28,6 +29,9 @@ struct WireHeader: Codable {
     /// hello only: the sender's fixed listening port and the groups it is in.
     var listenPort: UInt16?
     var groups: [AdvertisedGroup]?
+    /// hello: the sender's quiet hours; bye: when it will be back.
+    var quiet: QuietSchedule?
+    var quietUntil: Date?
 }
 
 /// One request or reply. On the wire:

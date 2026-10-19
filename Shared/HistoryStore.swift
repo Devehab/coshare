@@ -177,6 +177,13 @@ final class AppSettings: ObservableObject {
     @Published var paused: Bool { didSet { defaults.set(paused, forKey: Keys.paused) } }
     @Published var keepAlive: Bool { didSet { defaults.set(keepAlive, forKey: Keys.keepAlive) } }
     @Published var skipConcealed: Bool { didSet { defaults.set(skipConcealed, forKey: Keys.skipConcealed) } }
+    /// Scheduled quiet hours: completely off the network.
+    @Published var quietEnabled: Bool { didSet { defaults.set(quietEnabled, forKey: Keys.quietEnabled) } }
+    @Published var quietSchedule: QuietSchedule {
+        didSet { defaults.set(try? JSONEncoder().encode(quietSchedule), forKey: Keys.quietSchedule) }
+    }
+    /// Start of the quiet window the person chose to skip with "resume today".
+    @Published var resumedWindowStart: Date? { didSet { defaults.set(resumedWindowStart, forKey: Keys.resumedWindowStart) } }
 
     let defaults: UserDefaults
 
@@ -188,6 +195,9 @@ final class AppSettings: ObservableObject {
         static let paused = "paused"
         static let keepAlive = "keepAlive"
         static let skipConcealed = "skipConcealed"
+        static let quietEnabled = "quietEnabled"
+        static let quietSchedule = "quietSchedule"
+        static let resumedWindowStart = "resumedWindowStart"
     }
 
     init(defaults: UserDefaults, defaultName: String) {
@@ -208,5 +218,9 @@ final class AppSettings: ObservableObject {
         _paused = Published(initialValue: defaults.bool(forKey: Keys.paused))
         _keepAlive = Published(initialValue: defaults.bool(forKey: Keys.keepAlive))
         _skipConcealed = Published(initialValue: defaults.bool(forKey: Keys.skipConcealed))
+        _quietEnabled = Published(initialValue: defaults.bool(forKey: Keys.quietEnabled))
+        _quietSchedule = Published(initialValue: defaults.data(forKey: Keys.quietSchedule)
+            .flatMap { try? JSONDecoder().decode(QuietSchedule.self, from: $0) } ?? .default)
+        _resumedWindowStart = Published(initialValue: defaults.object(forKey: Keys.resumedWindowStart) as? Date)
     }
 }

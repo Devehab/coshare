@@ -20,6 +20,9 @@ struct ContentView: View {
             List {
                 Section {
                     statusRow
+                    if !engine.presence.isOnline {
+                        PresenceBanner()
+                    }
                     backgroundRow
                     HStack(spacing: 10) {
                         Button {
@@ -153,7 +156,7 @@ struct ContentView: View {
     private var statusRow: some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(settings.paused ? Color.gray : (engine.connectedPeers.isEmpty ? Color.orange : Color.green))
+                .fill(!engine.presence.isOnline ? Color.indigo : (engine.connectedPeers.isEmpty ? Color.orange : Color.green))
                 .frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 2) {
                 Text(statusTitle).font(.headline)
@@ -171,7 +174,11 @@ struct ContentView: View {
     }
 
     private var statusTitle: String {
-        if settings.paused { return "المزامنة متوقفة" }
+        switch engine.presence {
+        case .paused: return "متوقف — منفصل عن الشبكة"
+        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until))"
+        case .online: break
+        }
         let count = engine.connectedPeers.count
         return count == 0 ? "بانتظار أجهزة على نفس الشبكة…" : "متصل بـ \(count) \(count == 1 ? "جهاز" : "أجهزة")"
     }
@@ -218,6 +225,12 @@ struct SettingsView: View {
                     TextField("مثلاً: آيفون إيهاب", text: $settings.deviceName)
                 } header: {
                     Text("اسم هذا الجهاز")
+                }
+
+                Section {
+                    QuietScheduleEditor()
+                } header: {
+                    Text("أوقات الإيقاف")
                 }
 
                 Section {

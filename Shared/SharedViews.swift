@@ -34,6 +34,14 @@ enum Format {
 
     static func time(_ date: Date) -> String { clock.string(from: date) }
 
+    /// "5:00 م" style time for quiet-hour messages.
+    static func clock(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ar")
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+
     /// Wrapped in a left-to-right isolate so "125 KB" doesn't turn into "KB 125" inside Arabic text.
     static func bytes(_ count: Int) -> String {
         "\u{2066}" + ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file) + "\u{2069}"
@@ -336,5 +344,90 @@ struct LogRow: View {
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
+    }
+}
+
+/// Days + from/to for the quiet hours.
+struct QuietScheduleEditor: View {
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("إيقاف تلقائي بأوقات محددة", isOn: $settings.quietEnabled)
+            if settings.quietEnabled {
+                HStack(spacing: 5) {
+                    ForEach(QuietSchedule.dayOrder, id: \.self) { day in
+                        let isOn = settings.quietSchedule.days.contains(day)
+                        Button {
+                            if isOn { settings.quietSchedule.days.remove(day) } else { settings.quietSchedule.days.insert(day) }
+                        } label: {
+                            Text(QuietSchedule.dayNames[day] ?? "")
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 7)
+                                .background(Capsule().fill(isOn ? Color.accentColor : Color.secondary.opacity(0.15)))
+                                .foregroundColor(isOn ? .white : .primary)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+                HStack(spacing: 8) {
+                    Text("من")
+                    DatePicker("", selection: time(\.start), displayedComponents: .hourAndMinute).labelsHidden()
+                    Text("إلى")
+                    DatePicker("", selection: time(\.end), displayedComponents: .hourAndMinute).labelsHidden()
+                    Spacer(minLength: 0)
+                }
+                Text("بهالأوقات CoShare بيوقف كلياً على هالجهاز: ما بيقرأ الحافظة، ولا بيبعت ولا بيستقبل، ولا بيظهر على الشبكة. وأجهزتك التانية بتعرف جدوله، فما بتحاول تتصل فيه.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func time(_ keyPath: WritableKeyPath<QuietSchedule, Int>) -> Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(byAdding: .minute, value: settings.quietSchedule[keyPath: keyPath],
+                                      to: Calendar.current.startOfDay(for: Date())) ?? Date()
+            },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                settings.quietSchedule[keyPath: keyPath] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+            }
+        )
+    }
+}
+
+/// "Off the network until …" with the way back.
+struct PresenceBanner: View {
+    @EnvironmentObject private var engine: SyncEngine
+
+    var body: some View {
+        switch engine.presence {
+        case .online:
+            EmptyView()
+        case .paused:
+            banner(symbol: "pause.circle.fill", text: "متوقف — CoShare منفصل تماماً عن الشبكة", button: "استئناف")
+        case .quiet(let until):
+            banner(symbol: "moon.zzz.fill", text: "وقت الإيقاف حتى \(Format.clock(until)) — منفصل تماماً عن الشبكة",
+                   button: "استئناف اليوم")
+        }
+    }
+
+    private func banner(symbol: String, text: String, button: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol).foregroundColor(.indigo)
+            Text(text).font(.callout).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button(button) { engine.resumeToday() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.indigo.opacity(0.12)))
     }
 }

@@ -9,6 +9,7 @@
 //   leave <group>               leave a group
 //   groups | nearby | peers | history   print state
 //   qrtest                      encode an invite as QR, decode it with Vision, check it round-trips
+//   quietnow <minutes>          quiet hours starting now, every day · quietoff · resume · state
 // COSHARE_NO_BONJOUR=1 disables Bonjour (direct mode), COSHARE_PORT=<n> sets the listening port,
 // COSHARE_HOSTS=host:port,… are extra addresses to greet (like a hotspot gateway).
 //   quit
@@ -125,6 +126,18 @@ final class CommandReader {
                 let ok = decoded?.id == invite.id && decoded?.name == invite.name && decoded?.password == invite.password
                 say("QRTEST \(image.width)px decoded=\(payload != nil) roundtrip=\(ok)")
             }
+        case "quietnow":
+            let calendar = Calendar.current
+            let now = calendar.dateComponents([.hour, .minute], from: Date())
+            let start = (now.hour ?? 0) * 60 + (now.minute ?? 0)
+            engine.settings.quietSchedule = QuietSchedule(days: Set(1...7), start: start, end: (start + (Int(argument) ?? 2)) % (24 * 60))
+            engine.settings.quietEnabled = true
+        case "quietoff":
+            engine.settings.quietEnabled = false
+        case "resume":
+            engine.resumeToday()
+        case "state":
+            say("STATE \(engine.presence)")
         case "groups":
             say("GROUPS " + engine.settings.groups.map { "\($0.name)[\(engine.members(of: $0).map(\.name).joined(separator: ","))]" }.joined(separator: " "))
         case "nearby":

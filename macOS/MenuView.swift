@@ -34,6 +34,9 @@ struct MenuView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .padding(.horizontal, 14)
+            PresenceBanner()
+                .padding(.horizontal, 14)
+                .padding(.top, engine.presence.isOnline ? 0 : 10)
             Divider().padding(.top, 10)
             Group {
                 switch tab {
@@ -69,24 +72,28 @@ struct MenuView: View {
             }
             Spacer()
             Button {
-                settings.paused.toggle()
+                if engine.presence.isOnline { settings.paused = true } else { engine.resumeToday() }
             } label: {
-                Image(systemName: settings.paused ? "play.circle.fill" : "pause.circle")
+                Image(systemName: engine.presence.isOnline ? "pause.circle" : "play.circle.fill")
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            .help(settings.paused ? "استئناف المزامنة" : "إيقاف المزامنة مؤقتاً")
+            .help(engine.presence.isOnline ? "إيقاف وفصل CoShare عن الشبكة" : "استئناف")
         }
     }
 
     private var statusText: String {
-        if settings.paused { return "متوقف مؤقتاً" }
+        switch engine.presence {
+        case .paused: return "متوقف — منفصل عن الشبكة"
+        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until))"
+        case .online: break
+        }
         let count = engine.connectedPeers.count
         return count == 0 ? "بانتظار أجهزة على نفس الشبكة…" : "متصل بـ \(count) \(count == 1 ? "جهاز" : "أجهزة")"
     }
 
     private var statusColor: Color {
-        if settings.paused { return .gray }
+        if !engine.presence.isOnline { return .indigo }
         return engine.connectedPeers.isEmpty ? .orange : .green
     }
 
@@ -241,6 +248,8 @@ private struct MacSettingsView: View {
                     TextField("مثلاً: MacBook المكتب", text: $settings.deviceName)
                         .textFieldStyle(.roundedBorder)
                 }
+                Divider()
+                QuietScheduleEditor()
                 Divider()
                 Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)
                 Toggle("تجاهل كلمات السر المنسوخة من مدير كلمات السر", isOn: $settings.skipConcealed)
