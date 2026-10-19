@@ -253,6 +253,10 @@ private struct MacSettingsView: View {
                 Divider()
                 Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)
                 Toggle("تجاهل كلمات السر المنسوخة من مدير كلمات السر", isOn: $settings.skipConcealed)
+                Toggle("إظهار CoShare في الـ Dock", isOn: $settings.showInDock)
+                Text("افتح CoShare من أي مكان بالاختصار \(GlobalShortcut.display)، أو من الـ Dock أو Spotlight.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Toggle("التشغيل تلقائياً عند بدء الجهاز", isOn: $launchAtLogin)
                     .onValueChange(of: launchAtLogin) { enabled in
                         do {

@@ -177,6 +177,8 @@ final class AppSettings: ObservableObject {
     @Published var paused: Bool { didSet { defaults.set(paused, forKey: Keys.paused) } }
     @Published var keepAlive: Bool { didSet { defaults.set(keepAlive, forKey: Keys.keepAlive) } }
     @Published var skipConcealed: Bool { didSet { defaults.set(skipConcealed, forKey: Keys.skipConcealed) } }
+    /// macOS: show a Dock icon and a regular window (the menu bar can hide the icon behind the notch).
+    @Published var showInDock: Bool { didSet { defaults.set(showInDock, forKey: Keys.showInDock) } }
     /// Scheduled quiet hours: completely off the network.
     @Published var quietEnabled: Bool { didSet { defaults.set(quietEnabled, forKey: Keys.quietEnabled) } }
     @Published var quietSchedule: QuietSchedule {
@@ -196,13 +198,14 @@ final class AppSettings: ObservableObject {
         static let keepAlive = "keepAlive"
         static let skipConcealed = "skipConcealed"
         static let quietEnabled = "quietEnabled"
+        static let showInDock = "showInDock"
         static let quietSchedule = "quietSchedule"
         static let resumedWindowStart = "resumedWindowStart"
     }
 
     init(defaults: UserDefaults, defaultName: String) {
         self.defaults = defaults
-        defaults.register(defaults: [Keys.syncImages: true, Keys.keepAlive: true, Keys.skipConcealed: true])
+        defaults.register(defaults: [Keys.syncImages: true, Keys.keepAlive: true, Keys.skipConcealed: true, Keys.showInDock: true])
         if let id = defaults.string(forKey: Keys.deviceID) {
             deviceID = id
         } else {
@@ -219,6 +222,7 @@ final class AppSettings: ObservableObject {
         _keepAlive = Published(initialValue: defaults.bool(forKey: Keys.keepAlive))
         _skipConcealed = Published(initialValue: defaults.bool(forKey: Keys.skipConcealed))
         _quietEnabled = Published(initialValue: defaults.bool(forKey: Keys.quietEnabled))
+        _showInDock = Published(initialValue: defaults.bool(forKey: Keys.showInDock))
         _quietSchedule = Published(initialValue: defaults.data(forKey: Keys.quietSchedule)
             .flatMap { try? JSONDecoder().decode(QuietSchedule.self, from: $0) } ?? .default)
         _resumedWindowStart = Published(initialValue: defaults.object(forKey: Keys.resumedWindowStart) as? Date)

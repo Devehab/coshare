@@ -16,12 +16,26 @@ enum DevicePlatform: String, Codable {
     case mac
     case iphone
     case ipad
+    case windows
+    case linux
+    case android
+    /// A platform added after this build; decoding never fails because of it.
+    case other
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = DevicePlatform(rawValue: raw) ?? .other
+    }
 
     var symbolName: String {
         switch self {
         case .mac: return "laptopcomputer"
         case .iphone: return "iphone"
         case .ipad: return "ipad"
+        case .windows: return "desktopcomputer"
+        case .linux: return "terminal"
+        case .android: return "candybarphone"
+        case .other: return "questionmark.circle"
         }
     }
 }

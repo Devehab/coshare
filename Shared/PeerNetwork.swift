@@ -300,7 +300,7 @@ final class PeerNetwork: @unchecked Sendable {
             let groups = (0..<8).compactMap { txt["g\($0)"].flatMap(AdvertisedGroup.init(txtValue:)) }
             let id = txt["i"] ?? name
             let quiet = txt["q"].flatMap(QuietSchedule.init(txtValue:))
-            byID[id] = Peer(id: id, name: txt["n"] ?? name, platform: DevicePlatform(rawValue: txt["p"] ?? "") ?? .mac,
+            byID[id] = Peer(id: id, name: txt["n"] ?? name, platform: DevicePlatform(rawValue: txt["p"] ?? "") ?? .other,
                             groups: groups, endpoint: result.endpoint, isDirect: false, quiet: quiet)
             // Advertising again means it is back (e.g. "resume today").
             unsilence(id)

@@ -138,6 +138,15 @@ final class CommandReader {
             engine.resumeToday()
         case "state":
             say("STATE \(engine.presence)")
+        case "vector":
+            // Interop vector for other implementations: key + tag for a group id and password.
+            let words = argument.split(separator: " ").map(String.init)
+            let key = GroupKey(groupID: words[0], password: words[1])
+            let keyHex = key.key.withUnsafeBytes { Data($0) }.map { String(format: "%02x", $0) }.joined()
+            let header = WireHeader(type: .hello, senderID: "VECTOR", senderName: "Vector", platform: .mac, clip: nil,
+                                    listenPort: 47331, groups: [AdvertisedGroup(id: words[0], tag: key.tag, name: "G")], quiet: nil)
+            let frame = (try? WireMessage(header: header, payload: Data("مرحبا".utf8)).frame(using: key)) ?? Data()
+            say("VECTOR key=\(keyHex) tag=\(key.tag) frame=\(frame.base64EncodedString())")
         case "groups":
             say("GROUPS " + engine.settings.groups.map { "\($0.name)[\(engine.members(of: $0).map(\.name).joined(separator: ","))]" }.joined(separator: " "))
         case "nearby":
