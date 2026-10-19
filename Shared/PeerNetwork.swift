@@ -121,7 +121,9 @@ final class PeerNetwork: @unchecked Sendable {
 
     // MARK: Listener
 
-    private func startListener(_ me: LocalIdentity, _ gen: Int, port: UInt16?) {
+    /// `attempt` counts retries of the fixed port: right after a restart the old listener may not
+    /// have released it yet, and giving up too early would break direct (hotspot) connections.
+    private func startListener(_ me: LocalIdentity, _ gen: Int, port: UInt16?, attempt: Int = 0) {
         do {
             let parameters = Self.parameters()
             parameters.allowLocalEndpointReuse = true
@@ -145,8 +147,14 @@ final class PeerNetwork: @unchecked Sendable {
                     self.emit("جاهز للاستقبال على المنفذ \(self.listenPort)")
                 case .failed(let error):
                     self.listener?.cancel()
-                    if port != nil {
-                        // The fixed port is taken (another copy of the app?) — any free port still works with Bonjour.
+                    if let port, attempt < 12 {
+                        self.queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                            guard let self, gen == self.generation else { return }
+                            self.startListener(me, gen, port: port, attempt: attempt + 1)
+                        }
+                    } else if port != nil {
+                        // Something else really owns the port: Bonjour still works on any free port.
+                        self.emit("المنفذ \(Self.preferredPort) مشغول — الاتصال المباشر (Hotspot) قد لا يعمل", error: true)
                         self.startListener(me, gen, port: nil)
                     } else {
                         self.emit("توقف الاستقبال (\(error.localizedDescription)) — إعادة المحاولة", error: true)
@@ -162,6 +170,13 @@ final class PeerNetwork: @unchecked Sendable {
             listener.start(queue: queue)
             self.listener = listener
         } catch {
+            if let port, attempt < 12 {
+                queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    guard let self, gen == self.generation else { return }
+                    self.startListener(me, gen, port: port, attempt: attempt + 1)
+                }
+                return
+            }
             if port != nil { startListener(me, gen, port: nil); return }
             emit("تعذّر فتح منفذ الاستقبال: \(error.localizedDescription)", error: true)
             queue.asyncAfter(deadline: .now() + 3) { [weak self] in
