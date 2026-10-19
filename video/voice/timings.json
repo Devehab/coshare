@@ -1,0 +1,13 @@
+{
+  "_comment": "Pairs of [animation second, narration second]. Between pairs the animation is sped up or slowed down so each headline lands on its narration line. The last pair is the video length (voice end + 2 s of end card).",
+  "en": {
+    "voice": "video/voice/voice-en.mp3",
+    "keys": [[0, 0], [3.5, 2.31], [7, 5.28], [11, 11.44], [15, 14.0], [18.2, 17.83], [24, 22.75], [30.6, 27.23],
+             [34, 30.02], [37.8, 32.26], [40.8, 36.1], [44, 37.8], [49, 43.94], [53, 47.22], [60, 54.11]]
+  },
+  "ar": {
+    "voice": "video/voice/voice-ar.mp3",
+    "keys": [[0, 0], [3.5, 2.13], [7, 4.45], [11, 10.34], [15, 13.36], [18.2, 17.24], [24, 21.66], [30.6, 26.71],
+             [34, 29.81], [37.8, 31.95], [40.8, 36.82], [44, 38.23], [49, 45.09], [53, 48.5], [60, 55.71]]
+  }
+}

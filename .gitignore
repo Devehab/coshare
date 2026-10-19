@@ -1,0 +1,12 @@
+# Build outputs (scripts/build-mac.sh, video/render.sh)
+build/
+video/out/
+
+# Xcode / macOS
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.DS_Store
+
+# Local tooling
+.claude/
