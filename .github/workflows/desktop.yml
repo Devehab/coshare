@@ -8,9 +8,9 @@ on:
   push:
     tags: ["desktop-v*"]
     branches: [main]
-    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+    paths: ["desktop/**", "website/install.sh", ".github/workflows/desktop.yml"]
   pull_request:
-    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+    paths: ["desktop/**", "website/install.sh", ".github/workflows/desktop.yml"]
   workflow_dispatch:
 
 permissions:

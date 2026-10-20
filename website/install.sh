@@ -193,7 +193,10 @@ uninstall() {
   if command -v dpkg >/dev/null 2>&1 && dpkg -s coshare >/dev/null 2>&1; then
     $SUDO apt-get remove -y -q coshare
   elif command -v rpm >/dev/null 2>&1 && rpm -q coshare >/dev/null 2>&1; then
-    if command -v dnf >/dev/null 2>&1; then $SUDO dnf remove -y coshare; else $SUDO yum remove -y coshare; fi
+    # Only CoShare itself, like apt-get remove: RHEL's dnf would also take the libraries that came
+    # with it, and refuses outright when one of them is protected (systemd-udev on a minimal system).
+    if command -v dnf >/dev/null 2>&1; then $SUDO dnf remove -y --setopt=clean_requirements_on_remove=False coshare
+    else $SUDO yum remove -y --setopt=clean_requirements_on_remove=0 coshare; fi
   fi
   rm -rf "$LOCAL_DIR/app" "$LOCAL_BIN/coshare" "$APPS_DIR/coshare.desktop" "$HOME/.config/autostart/coshare.desktop"
   ok "CoShare removed (your groups and history stay in ~/.config/CoShare; delete that folder to remove them too)"
