@@ -9,6 +9,11 @@
 set -euo pipefail
 format="${1:-}"
 . /etc/os-release
+# Debian 11 left LTS in 2026: its security pool moved to the archive, so a fresh container's index
+# points at files that are gone. The test only needs the release's own packages.
+if grep -q 'VERSION_CODENAME=bullseye' /etc/os-release 2>/dev/null; then
+  sed -i '/security/d' /etc/apt/sources.list 2>/dev/null || true
+fi
 step() { printf '\n== %s\n' "$*"; }
 
 step "prepare $PRETTY_NAME"
