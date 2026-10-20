@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>سياسة الخصوصية — CoShare</title>
+  <meta name="description" content="ما البيانات التي يعالجها CoShare، وأين تُحفظ، ومتى تُحذف، وما الذي يُرسل عبر شبكتك وكيف يُشفَّر. لا خوادم ولا حسابات ولا تتبّع.">
+  <meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#13120f" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="https://devehab.github.io/coshare/privacy.html">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preload" href="assets/fonts/readexpro-arabic-300-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/fonts.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#d24a22"/><rect x="25" y="12" width="24" height="31" rx="5" fill="#f5f0e8" opacity=".5"/><path d="M19.5 21H32l8 8v19a4 4 0 0 1-4 4H19.5a4 4 0 0 1-4-4V25a4 4 0 0 1 4-4z" fill="#f5f0e8"/><path d="M32 21v5.5a2.5 2.5 0 0 0 2.5 2.5H40" fill="none" stroke="#d24a22" stroke-width="2.4" stroke-linejoin="round"/><path d="M22 38.5h11M22 44h7" stroke="#d24a22" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="./" aria-label="CoShare"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>CoShare</a>
+      <nav class="nav-links" aria-label="Main">
+        <a href="./" data-ar="الرئيسية" data-en="Home">الرئيسية</a>
+        <a href="./#security" data-ar="الأمان" data-en="Security">الأمان</a>
+        <a href="./#faq" data-ar="الأسئلة" data-en="FAQ">الأسئلة</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="lang-toggle" id="langToggle" type="button">English</button>
+        <a class="btn btn-primary btn-sm" href="./#download" data-ar="حمّل مجاناً" data-en="Get it free" style="display:inline-flex">حمّل مجاناً</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================================ العربية ================================ -->
+    <div data-lang-block="ar">
+      <div class="container doc-hero">
+        <span class="kicker">الخصوصية</span>
+        <h1>سياسة الخصوصية</h1>
+        <p class="lead">صُمّم CoShare بحيث لا نستطيع رؤية بياناتك حتى لو أردنا: لا خوادم، ولا حسابات، ولا تحليلات. هذه الصفحة تشرح بالتفصيل ما يحدث لكل معلومة يتعامل معها التطبيق.</p>
+        <p class="doc-meta">آخر تحديث: ١٩ أكتوبر ٢٠٢٦ · تنطبق على تطبيقات CoShare لكل الأنظمة وعلى هذا الموقع</p>
+      </div>
+
+      <div class="container doc-layout">
+        <nav class="doc-toc" aria-label="المحتويات">
+          <strong>المحتويات</strong>
+          <a href="#ar-who">من نحن</a>
+          <a href="#ar-device">البيانات على أجهزتك</a>
+          <a href="#ar-network">ما يُرسل عبر الشبكة</a>
+          <a href="#ar-never">ما لا نجمعه أبداً</a>
+          <a href="#ar-perms">الأذونات</a>
+          <a href="#ar-control">تحكّمك ببياناتك</a>
+          <a href="#ar-site">هذا الموقع</a>
+          <a href="#ar-contact">التغييرات والتواصل</a>
+        </nav>
+
+        <article class="doc">
+          <div class="tldr">
+            <div><svg><use href="#i-check"/></svg><span><strong>لا خوادم.</strong> ما تنسخه ينتقل مباشرة بين أجهزتك على شبكتك المحلية فقط.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>لا حسابات.</strong> لا بريد إلكتروني ولا رقم هاتف ولا Apple ID أو حساب Google.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>لا تتبّع.</strong> التطبيق لا يتصل بالإنترنت ولا يرسل أي إحصاءات أو تقارير أعطال.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>تشفير بين أجهزتك.</strong> كل رسالة مشفّرة بمفتاح مشتق من كلمة سر مجموعتك.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>سجل يمحو نفسه.</strong> يُحذف بعد يوم افتراضياً، وأسبوع كحد أقصى.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>أنت المتحكم.</strong> إيقاف، أوقات إيقاف، مسح السجل، ومغادرة المجموعة متى شئت.</span></div>
+          </div>
+
+          <section id="ar-who">
+            <h2>من نحن ومن يصل إلى بياناتك</h2>
+            <p>CoShare مشروع مستقل مفتوح المصدر على <a href="https://github.com/Devehab/coshare" rel="noopener">GitHub</a>. التطبيق لا يرسل إلينا أي شيء، لذلك نحن لا نجمع ولا نخزّن ولا نعالج أي بيانات شخصية عنك. الأطراف الوحيدة التي تصل إلى بياناتك هي أنت والأجهزة التي تضيفها بنفسك إلى مجموعاتك.</p>
+          </section>
+
+          <section id="ar-device">
+            <h2>البيانات التي يعالجها التطبيق على أجهزتك</h2>
+            <p>كل ما يلي يبقى على أجهزتك، داخل مجلد بيانات التطبيق وإعداداته:</p>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>البيانات</th><th>لماذا</th><th>متى تُحذف</th></tr></thead>
+                <tbody>
+                  <tr><td>ما تنسخه من نصوص</td><td>لإرساله لأجهزة مجموعتك، ولتعود إليه من السجل</td><td>بعد مدة الاحتفاظ (يوم افتراضياً)، أو فوراً عند مسحه</td></tr>
+                  <tr><td>الصور ولقطات الشاشة المنسوخة</td><td>نفسه، بجودتها الأصلية، كملفات داخل مجلد التطبيق</td><td>مع عنصرها في السجل</td></tr>
+                  <tr><td>سجل النشاط</td><td>لتعرف أن المزامنة تعمل: اتصل، أُرسل، استُلم، أخطاء. لا يحتوي محتوى النسخ</td><td>بعد مدة الاحتفاظ نفسها</td></tr>
+                  <tr><td>المجموعات: الاسم والمعرّف وكلمة السر</td><td>ليعود الجهاز لمجموعاته تلقائياً بعد إعادة التشغيل</td><td>عند مغادرة المجموعة أو حذف التطبيق</td></tr>
+                  <tr><td>اسم الجهاز ومعرّف عشوائي له</td><td>لتتعرّف أجهزتك على بعضها</td><td>عند حذف التطبيق</td></tr>
+                  <tr><td>عناوين أجهزتك في الشبكة المحلية وجداول أوقات إيقافها</td><td>لإعادة الاتصال بسرعة، ولعدم الاتصال بجهاز خلال أوقات إيقافه</td><td>تتحدّث تلقائياً، وتُحذف مع التطبيق</td></tr>
+                  <tr><td>الإعدادات</td><td>أوقات الإيقاف، مدة الاحتفاظ، صيغة الوقت وغيرها</td><td>عند حذف التطبيق</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <ul>
+              <li>لا يقرأ CoShare الحافظة إلا عندما يكون الجهاز في مجموعة، وغير متوقف، وخارج أوقات الإيقاف.</li>
+              <li>على الماك، ما تنسخه من مديري كلمات المرور (مثل 1Password) ويكون مُعلَّماً كـ«سري» يُتجاهل: لا يُحفظ ولا يُرسل. الخيار مفعّل افتراضياً.</li>
+              <li>مدة الاحتفاظ تختارها من الإعدادات: ساعة، ١٢ ساعة، يوم، ٣ أيام أو أسبوع. يحتفظ السجل بـ ٥٠٠ عنصر كحد أقصى، والصورة حتى ٤٠ ميغابايت.</li>
+            </ul>
+          </section>
+
+          <section id="ar-network">
+            <h2>ما الذي يُرسل عبر شبكتك المحلية</h2>
+            <h3>١. إعلان الجهاز، ويراه كل من على الشبكة</h3>
+            <p>ليجد أجهزتك تلقائياً، يعلن كل جهاز عن نفسه عبر Bonjour (mDNS، الخدمة <code>_coshare._tcp</code>) بهذه المعلومات فقط: اسم الجهاز، ونوع النظام، ومعرّف عشوائي للجهاز، ورقم إصدار البروتوكول، ولكل مجموعة معرّفها واسمها ورمز تحقق قصير (٤ بايت) مشتق من كلمة سرها، وجدول أوقات الإيقاف إن فعّلته.</p>
+            <p class="callout">لذلك ننصح باسم جهاز واسم مجموعة لا يكشفان معلومات حساسة، وبكلمة سر قوية: رمز التحقق يسمح لمن على الشبكة بتجربة كلمات السر دون اتصال بأجهزتك، فكلمة السر الضعيفة يمكن تخمينها.</p>
+            <h3>٢. ما تنسخه: مشفّر، ولأجهزة مجموعاتك فقط</h3>
+            <p>كل نسخة تُرسل مباشرة عبر اتصال TCP محلي (المنفذ <code>47331</code>) إلى أجهزة مجموعاتك فقط. الرسالة كاملة، أي المحتوى واسم الجهاز المرسل ونوعه ووقت النسخ، مشفّرة وموقّعة بـ <strong>ChaCha20-Poly1305</strong> بمفتاح طوله 256 بت مشتق من كلمة سر المجموعة بـ <strong>PBKDF2-SHA256</strong> (١٢٠٬٠٠٠ تكرار، مملّح بمعرّف المجموعة)، مع رقم عشوائي جديد لكل رسالة. من لا يعرف كلمة السر لا يستطيع قراءة الرسائل ولا تزويرها.</p>
+            <h3>٣. رسائل الاتصال المباشر</h3>
+            <p>ليعمل CoShare عندما يكون اللابتوب على نقطة اتصال الهاتف (Hotspot) أو على شبكة تمنع الاكتشاف، يرسل الجهاز رسالة «مرحباً» مشفّرة بمفتاح المجموعة إلى عنوان الموجّه وإلى عناوين أجهزتك التي عرفها سابقاً، على المنفذ نفسه. وعند بداية أوقات الإيقاف يرسل رسالة «وداع» مشفّرة لأجهزته، ثم لا يرسل ولا يستقبل شيئاً.</p>
+            <h3>٤. كلمة السر ورمز الدعوة</h3>
+            <p>كلمة السر لا تُرسل عبر الشبكة أبداً، ويتحقق منها كل جهاز محلياً. رمز QR للدعوة يحتوي معرّف المجموعة واسمها وكلمة سرها، ولا يظهر إلا عندما تطلبه أنت؛ عامله ككلمة السر نفسها.</p>
+          </section>
+
+          <section id="ar-never">
+            <h2>ما لا نجمعه أبداً</h2>
+            <ul>
+              <li>لا تحليلات ولا إحصاءات استخدام، ولا تقارير أعطال.</li>
+              <li>لا معرّفات إعلانية، ولا موقع جغرافي، ولا جهات اتصال.</li>
+              <li>لا حسابات ولا تسجيل دخول.</li>
+              <li>التطبيق لا يتصل بأي خادم على الإنترنت إطلاقاً، ويعمل والإنترنت مقطوع.</li>
+              <li>لا نبيع ولا نشارك أي بيانات مع أي طرف، لأنه ببساطة لا توجد لدينا بيانات.</li>
+            </ul>
+          </section>
+
+          <section id="ar-perms">
+            <h2>الأذونات ولماذا نطلبها</h2>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>الإذن</th><th>الأنظمة</th><th>لماذا</th></tr></thead>
+                <tbody>
+                  <tr><td>الشبكة المحلية</td><td>iOS، macOS</td><td>لاكتشاف أجهزتك والتواصل معها.</td></tr>
+                  <tr><td>اللصق من التطبيقات الأخرى</td><td>iOS</td><td>لقراءة ما تنسخه وإرساله لأجهزتك.</td></tr>
+                  <tr><td>الكاميرا</td><td>iOS، macOS، Windows، Linux</td><td>لمسح رمز QR للدعوة فقط. الصورة تُحلَّل في الذاكرة على جهازك، ولا تُحفظ ولا تُرسل.</td></tr>
+                  <tr><td>العمل بالخلفية (صوت صامت)</td><td>iOS</td><td>ليبقى التطبيق يعمل ويستقبل. لا يستخدم الميكروفون ولا يسجّل أي صوت.</td></tr>
+                  <tr><td>التشغيل مع بدء الجهاز</td><td>macOS، Windows، Linux</td><td>ليعمل دون أن تتذكر فتحه. يمكنك إيقافه من الإعدادات.</td></tr>
+                  <tr><td>جدار الحماية</td><td>Windows</td><td>ليستقبل من أجهزتك. اختر «الشبكات الخاصة» فقط.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="ar-control">
+            <h2>تحكّمك ببياناتك</h2>
+            <ul>
+              <li><strong>إيقاف:</strong> زر الإيقاف يفصل CoShare عن الشبكة كلياً حتى تستأنف.</li>
+              <li><strong>أوقات الإيقاف:</strong> أيام وساعات يختفي فيها الجهاز عن الشبكة تماماً، مثل ساعات العمل على جهاز الشركة.</li>
+              <li><strong>مدة الاحتفاظ:</strong> من ساعة واحدة حتى أسبوع.</li>
+              <li><strong>مسح فوري:</strong> «مسح السجل والحافظة» من الإعدادات، أو حذف أي عنصر وحده.</li>
+              <li><strong>مغادرة مجموعة:</strong> يتوقف الإرسال والاستقبال معها فوراً.</li>
+              <li><strong>حذف كل شيء:</strong> احذف التطبيق، ثم مجلد بياناته إن بقي:</li>
+            </ul>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>النظام</th><th>مكان البيانات</th></tr></thead>
+                <tbody>
+                  <tr><td>macOS</td><td><code>~/Library/Application Support/CoShare</code> والإعدادات <code>com.ehabk.CoShare.mac</code></td></tr>
+                  <tr><td>iOS و iPadOS</td><td>داخل التطبيق، وتُحذف بحذفه.</td></tr>
+                  <tr><td>Windows</td><td><code>%APPDATA%\CoShare</code></td></tr>
+                  <tr><td>Linux</td><td><code>~/.config/CoShare</code>، وللإزالة: <code>curl -fsSL https://devehab.github.io/coshare/install.sh | bash -s -- --uninstall</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="ar-site">
+            <h2>هذا الموقع</h2>
+            <ul>
+              <li>لا ملفات تعريف ارتباط (Cookies)، ولا أدوات تحليل، ولا إعلانات.</li>
+              <li>الخطوط والفيديو مستضافة على الموقع نفسه، فلا تُرسل زيارتك لأي طرف ثالث مثل Google.</li>
+              <li>يحفظ متصفحك لغتك المفضلة محلياً (localStorage) فقط، ولا تصلنا.</li>
+              <li>الموقع مستضاف على GitHub Pages، وملفات التحميل وأمر التثبيت على لينكس تُنزَّل من GitHub Releases. قد يسجّل GitHub عنوان IP كجزء من تشغيل الاستضافة، وفق <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">بيان الخصوصية الخاص به</a>.</li>
+            </ul>
+          </section>
+
+          <section id="ar-contact">
+            <h2>الأطفال والتغييرات والتواصل</h2>
+            <p>لا يجمع CoShare أي بيانات شخصية، وبالتالي لا يجمع بيانات أطفال. أي تغيير على هذه السياسة يُنشر في هذه الصفحة مع تاريخ التحديث، ويمكن متابعة كل تعديل في سجل المشروع على GitHub.</p>
+            <p class="callout teal">لأي سؤال أو ملاحظة أو بلاغ أمني: <a href="https://github.com/Devehab/coshare/issues" rel="noopener">افتح مسألة على GitHub</a>.</p>
+          </section>
+        </article>
+      </div>
+    </div>
+
+    <!-- ================================ English ================================ -->
+    <div data-lang-block="en">
+      <div class="container doc-hero">
+        <span class="kicker">Privacy</span>
+        <h1>Privacy Policy</h1>
+        <p class="lead">CoShare is built so that we couldn’t see your data even if we wanted to: no servers, no accounts, no analytics. This page explains exactly what happens to every piece of information the app handles.</p>
+        <p class="doc-meta">Last updated: 19 October 2026 · Applies to the CoShare apps on every platform and to this website</p>
+      </div>
+
+      <div class="container doc-layout">
+        <nav class="doc-toc" aria-label="Contents">
+          <strong>Contents</strong>
+          <a href="#en-who">Who we are</a>
+          <a href="#en-device">Data on your devices</a>
+          <a href="#en-network">What travels on the network</a>
+          <a href="#en-never">What we never collect</a>
+          <a href="#en-perms">Permissions</a>
+          <a href="#en-control">Your control</a>
+          <a href="#en-site">This website</a>
+          <a href="#en-contact">Changes &amp; contact</a>
+        </nav>
+
+        <article class="doc">
+          <div class="tldr">
+            <div><svg><use href="#i-check"/></svg><span><strong>No servers.</strong> What you copy goes straight between your devices, on your local network only.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>No accounts.</strong> No email, no phone number, no Apple ID or Google account.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>No tracking.</strong> The app never connects to the internet and sends no analytics or crash reports.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>Encrypted between your devices.</strong> Every message uses a key derived from your group’s password.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>History that erases itself.</strong> Deleted after a day by default, a week at most.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>You’re in control.</strong> Pause, quiet hours, clear history and leave a group any time.</span></div>
+          </div>
+
+          <section id="en-who">
+            <h2>Who we are and who can reach your data</h2>
+            <p>CoShare is an independent, open-source project on <a href="https://github.com/Devehab/coshare" rel="noopener">GitHub</a>. The app sends nothing to us, so we don’t collect, store or process any personal data about you. The only parties that can reach your data are you and the devices you add to your groups yourself.</p>
+          </section>
+
+          <section id="en-device">
+            <h2>Data the app handles on your devices</h2>
+            <p>Everything below stays on your devices, in the app’s data folder and settings:</p>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Data</th><th>Why</th><th>When it’s deleted</th></tr></thead>
+                <tbody>
+                  <tr><td>Text you copy</td><td>To send it to your group’s devices, and so you can find it in your history</td><td>After the retention period (one day by default), or immediately when you clear it</td></tr>
+                  <tr><td>Copied images and screenshots</td><td>The same, at original quality, as files inside the app’s folder</td><td>Together with their history entry</td></tr>
+                  <tr><td>Activity log</td><td>So you can see sync working: connected, sent, received, errors. It never contains what you copied</td><td>After the same retention period</td></tr>
+                  <tr><td>Groups: name, ID and password</td><td>So the device rejoins its groups automatically after a restart</td><td>When you leave the group or delete the app</td></tr>
+                  <tr><td>Device name and a random device ID</td><td>So your devices recognise each other</td><td>When you delete the app</td></tr>
+                  <tr><td>Local-network addresses of your devices and their quiet-hour schedules</td><td>To reconnect quickly, and never to contact a device during its quiet hours</td><td>Updated automatically; deleted with the app</td></tr>
+                  <tr><td>Settings</td><td>Quiet hours, retention, time format and so on</td><td>When you delete the app</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <ul>
+              <li>CoShare only reads the clipboard while the device is in a group, not paused, and outside quiet hours.</li>
+              <li>On the Mac, items copied from password managers (like 1Password) that are marked as concealed are ignored: never stored, never sent. This is on by default.</li>
+              <li>You choose the retention period in Settings: 1 hour, 12 hours, 1 day, 3 days or a week. History keeps at most 500 items, and images up to 40 MB each.</li>
+            </ul>
+          </section>
+
+          <section id="en-network">
+            <h2>What travels over your local network</h2>
+            <h3>1. The device announcement, visible to everyone on the network</h3>
+            <p>To find your devices automatically, each device announces itself over Bonjour (mDNS, service <code>_coshare._tcp</code>) with only this: its name, its platform, a random device ID, the protocol version, and for each group its ID, its name and a short check value (4 bytes) derived from its password, plus its quiet-hour schedule if you turned one on.</p>
+            <p class="callout">So choose device and group names that reveal nothing sensitive, and a strong password: the check value lets someone on the network try passwords offline, so a weak one can be guessed.</p>
+            <h3>2. What you copy: encrypted, for your groups’ devices only</h3>
+            <p>Every copy goes directly over a local TCP connection (port <code>47331</code>) to the devices in your groups and nowhere else. The whole message — the content, the sender’s name and platform, and when it was copied — is encrypted and authenticated with <strong>ChaCha20-Poly1305</strong> using a 256-bit key derived from the group password with <strong>PBKDF2-SHA256</strong> (120,000 iterations, salted with the group ID), with a fresh random nonce per message. Without the password nobody can read or forge these messages.</p>
+            <h3>3. Direct-connection messages</h3>
+            <p>So CoShare works when a laptop is on the phone’s hotspot or on a network that blocks discovery, a device sends an encrypted “hello” — sealed with the group key — to the router’s address and to addresses where it has seen your devices before, on the same port. When quiet hours begin it sends an encrypted “bye” to its devices, then sends and receives nothing.</p>
+            <h3>4. The password and the invite code</h3>
+            <p>The password never travels over the network; each device checks it locally. The QR invite contains the group’s ID, name and password, and only appears when you ask for it — treat it like the password itself.</p>
+          </section>
+
+          <section id="en-never">
+            <h2>What we never collect</h2>
+            <ul>
+              <li>No analytics, no usage statistics, no crash reports.</li>
+              <li>No advertising identifiers, no location, no contacts.</li>
+              <li>No accounts and no sign-in.</li>
+              <li>The app never connects to any server on the internet, and works with the internet switched off.</li>
+              <li>We don’t sell or share any data with anyone — there simply is no data on our side.</li>
+            </ul>
+          </section>
+
+          <section id="en-perms">
+            <h2>Permissions and why we ask</h2>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Permission</th><th>Platforms</th><th>Why</th></tr></thead>
+                <tbody>
+                  <tr><td>Local network</td><td>iOS, macOS</td><td>To discover and talk to your devices.</td></tr>
+                  <tr><td>Paste from other apps</td><td>iOS</td><td>To read what you copy and send it to your devices.</td></tr>
+                  <tr><td>Camera</td><td>iOS, macOS, Windows, Linux</td><td>Only to scan a group’s invite QR code. Frames are analysed in memory on your device, never saved or sent.</td></tr>
+                  <tr><td>Background (silent audio)</td><td>iOS</td><td>To keep the app running and receiving. It never uses the microphone or records anything.</td></tr>
+                  <tr><td>Start at login</td><td>macOS, Windows, Linux</td><td>So it works without you remembering to open it. You can turn it off in Settings.</td></tr>
+                  <tr><td>Firewall</td><td>Windows</td><td>To receive from your devices. Choose “Private networks” only.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="en-control">
+            <h2>Your control over your data</h2>
+            <ul>
+              <li><strong>Pause:</strong> the pause button disconnects CoShare from the network entirely until you resume.</li>
+              <li><strong>Quiet hours:</strong> days and times when the device disappears from the network completely, such as working hours on a company laptop.</li>
+              <li><strong>Retention:</strong> from one hour up to a week.</li>
+              <li><strong>Clear now:</strong> “Clear history” in Settings, or delete any single item.</li>
+              <li><strong>Leave a group:</strong> sending and receiving with it stops immediately.</li>
+              <li><strong>Delete everything:</strong> uninstall the app, then remove its data folder if it remains:</li>
+            </ul>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Platform</th><th>Where the data lives</th></tr></thead>
+                <tbody>
+                  <tr><td>macOS</td><td><code>~/Library/Application Support/CoShare</code> and the settings <code>com.ehabk.CoShare.mac</code></td></tr>
+                  <tr><td>iOS and iPadOS</td><td>Inside the app; removed when you delete it.</td></tr>
+                  <tr><td>Windows</td><td><code>%APPDATA%\CoShare</code></td></tr>
+                  <tr><td>Linux</td><td><code>~/.config/CoShare</code>; to uninstall: <code>curl -fsSL https://devehab.github.io/coshare/install.sh | bash -s -- --uninstall</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="en-site">
+            <h2>This website</h2>
+            <ul>
+              <li>No cookies, no analytics, no ads.</li>
+              <li>Fonts and videos are served from this site itself, so your visit isn’t sent to third parties such as Google.</li>
+              <li>Your browser remembers your preferred language locally (localStorage); it never reaches us.</li>
+              <li>The site is hosted on GitHub Pages, and downloads and the Linux install command come from GitHub Releases. GitHub may log IP addresses as part of running that hosting, under <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">its privacy statement</a>.</li>
+            </ul>
+          </section>
+
+          <section id="en-contact">
+            <h2>Children, changes and contact</h2>
+            <p>CoShare collects no personal data, so it collects no data from children. Any change to this policy is published on this page with its date, and every edit can be followed in the project’s history on GitHub.</p>
+            <p class="callout teal">Questions, feedback or a security report: <a href="https://github.com/Devehab/coshare/issues" rel="noopener">open an issue on GitHub</a>.</p>
+          </section>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <a class="brand brand-sm" href="./"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>CoShare</a>
+      <nav aria-label="Footer">
+        <a href="./" data-ar="الرئيسية" data-en="Home">الرئيسية</a>
+        <a href="./#download" data-ar="التحميل" data-en="Download">التحميل</a>
+        <a href="https://github.com/Devehab/coshare" rel="noopener" data-ar="الكود المصدري" data-en="Source code">الكود المصدري</a>
+      </nav>
+      <span>© <span id="year">2026</span> CoShare</span>
+    </div>
+  </footer>
+  <script src="privacy.js"></script>
+</body>
+</html>

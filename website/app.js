@@ -10,9 +10,12 @@
     "nav.download": "Download",
     "nav.faq": "FAQ",
     "nav.cta": "Get it free",
+    "nav.skip": "Skip to content",
+    "nav.privacy": "Privacy policy",
+    "sec.policy": "Read the privacy policy: what data exists, where it’s kept and how it’s encrypted",
 
     "hero.eyebrow": "One clipboard for all your devices",
-    "hero.title": "Copy here.<br><span class=\"grad-text\">Paste there.</span>",
+    "hero.title": "Copy here.<br><span class=\"mark\">Paste there.</span>",
     "hero.lead": "CoShare turns your iPhone, Android, Mac, Windows and Linux clipboards into one. Copy text or an image on any device and it’s instantly ready to paste on the others — even when they’re on different accounts.",
     "hero.cta": "Download free",
     "hero.watch": "Watch in 60 seconds",
@@ -36,10 +39,10 @@
     "problem.c2.p": "Android phone with a Mac? iPhone with Windows? There’s no shared clipboard between them at all.",
     "problem.c3.t": "Stalls for no reason",
     "problem.c3.p": "Bluetooth, Wi-Fi and Handoff all have to agree at the same moment. Sometimes they don’t.",
-    "problem.solution": "CoShare doesn’t care about your account or your OS. <span class=\"grad-text\">It only needs your devices nearby.</span>",
+    "problem.solution": "CoShare doesn’t care about your account or your OS. <span class=\"mark\">It only needs your devices nearby.</span>",
 
     "how.kicker": "How it works",
-    "how.title": "Three steps… <span class=\"grad-text\">once</span>",
+    "how.title": "Three steps… <span class=\"mark\">once</span>",
     "how.sub": "After that you forget CoShare is there — you just notice copy and paste works everywhere.",
     "how.s1.t": "Install CoShare",
     "how.s1.p": "On every device you own: phone, tablet, laptop or desktop. It’s tiny and runs quietly in the background.",
@@ -49,7 +52,7 @@
     "how.s3.p": "That’s it. Any text or image you copy is ready on all your devices in under a second.",
 
     "net.kicker": "Under the hood",
-    "net.title": "Runs on your network,<br><span class=\"grad-text\">not the internet.</span>",
+    "net.title": "Runs on your network,<br><span class=\"mark\">not the internet.</span>",
     "net.sub": "No servers, no cloud, no account. Your devices talk to each other directly — in a language only they understand.",
     "net.f1.t": "Automatic discovery",
     "net.f1.p": "Your devices find each other over Bonjour (mDNS) on the same Wi-Fi. No setup, no IP addresses.",
@@ -61,7 +64,7 @@
     "net.f4.p": "Internet down? CoShare doesn’t even notice. Devices on the same local network is all it needs.",
 
     "sec.kicker": "Security",
-    "sec.title": "Your neighbour on the same Wi-Fi?<br><span class=\"grad-text\">Sees nothing.</span>",
+    "sec.title": "Your neighbour on the same Wi-Fi?<br><span class=\"mark\">Sees nothing.</span>",
     "sec.sub": "Being on the same network doesn’t make a device yours. CoShare separates the two with cryptography, not trust.",
     "sec.p1.t": "Your group, your password",
     "sec.p1.p": "Create a private group with a name and a password. Everything sent inside it is encrypted with a key derived from that password — without it, nobody can read your clips or send you anything.",
@@ -74,7 +77,7 @@
     "sec.p5.t": "Passwords never travel",
     "sec.p5.p": "Anything copied from password managers like 1Password is ignored automatically and never leaves your device.",
     "sec.p6.t": "History that erases itself",
-    "sec.p6.p": "CoShare keeps only the last 24 hours, only on your devices, then deletes it automatically.",
+    "sec.p6.p": "Only on your devices, for one day by default or the period you choose (up to a week), then deleted automatically, images included.",
     "sec.demo.new": "New iPhone",
     "sec.demo.group": "“Ehab’s devices”",
     "sec.demo.join": "Join",
@@ -84,13 +87,13 @@
     "sec.demo.stranger": "A stranger on the same Wi-Fi only sees the group’s name — and receives nothing you copy without the password.",
 
     "feat.kicker": "Features",
-    "feat.title": "Everything you’d expect… <span class=\"grad-text\">and more</span>",
+    "feat.title": "Everything you’d expect… <span class=\"mark\">and more</span>",
     "feat.f1.t": "Verification codes, automatically",
     "feat.f1.p": "Got an OTP on your phone? It lands on your laptop’s clipboard the moment the message arrives. Just paste.",
     "feat.f2.t": "Full-quality images",
     "feat.f2.p": "Screenshots and photos arrive exactly as they left, byte for byte. No compression, no artifacts.",
-    "feat.f3.t": "24-hour history",
-    "feat.f3.p": "Go back to anything you copied today, on any device, and copy it again with one click.",
+    "feat.f3.t": "History that erases itself",
+    "feat.f3.p": "Go back to anything you copied and copy it again with one click. It’s deleted after a day, or the period you choose up to a week.",
     "feat.f4.t": "Runs in the background",
     "feat.f4.p": "No need to open the app. It works silently and starts on its own with your device.",
     "feat.f5.t": "Automatic quiet hours",
@@ -114,7 +117,7 @@
     "cmp.r6": "Verification codes arrive automatically",
 
     "dl.kicker": "Download",
-    "dl.title": "Get it on <span class=\"grad-text\">all your devices</span>",
+    "dl.title": "Get it on <span class=\"mark\">all your devices</span>",
     "dl.sub": "Install it on at least two devices to see the magic. Completely free.",
     "dl.rec": "Your device",
     "dl.btn": "Download",
@@ -156,7 +159,7 @@
     "faq.q6": "How do verification codes arrive automatically?",
     "faq.a6": "On iPhone, create a Shortcuts automation that runs when a message containing “code” arrives, and add the “Send text to devices” action with “Code only” on. CoShare extracts the number and puts it on all your clipboards.",
     "faq.q7": "Where are my clips stored, and for how long?",
-    "faq.a7": "Only on your devices, for 24 hours, then they’re deleted automatically. There’s no copy on any server — because there is no server.",
+    "faq.a7": "Only on your devices. By default clips and their images are deleted after one day; in Settings you choose 1 hour, 12 hours, 1 day, 3 days or a week at most. There’s no copy on any server — because there is no server.",
     "faq.q8": "Can a device be in more than one group?",
     "faq.a8": "Yes — say one group for your personal devices and one for work; what you copy reaches every group the device is in. To remove a device, leave the group on it, or create a new group with a new password and move your devices over.",
     "faq.q10": "Can I switch it off during working hours on a company computer?",
@@ -164,11 +167,13 @@
     "faq.q9": "How many devices can I pair?",
     "faq.a9": "There’s no practical limit. Laptops, phones and tablets together, all receiving at the same moment.",
 
-    "final.title": "Stop sending things <span class=\"grad-text\">to yourself.</span>",
+    "final.title": "Stop sending things <span class=\"mark\">to yourself.</span>",
     "final.sub": "Install CoShare on your devices and make them one clipboard today.",
     "final.cta": "Download free",
 
-    "footer.privacy": "Privacy & security",
+    "footer.privacy": "Privacy policy",
+    "footer.security": "Security",
+    "footer.source": "Source code",
     "footer.faq": "FAQ",
     "footer.download": "Download"
   };
@@ -205,6 +210,19 @@
     document.getElementById("videoFrame").classList.remove("playing");
     if (video) { video.removeAttribute("src"); video.load(); }
     highlightPlatform();
+    labelCompareRows();
+    var menuButton = document.getElementById("menuBtn");
+    if (menuButton) menuButton.setAttribute("aria-label", lang === "ar" ? "القائمة" : "Menu");
+  }
+
+  // Phones show the comparison as cards: each answer is labelled with its column's name.
+  function labelCompareRows() {
+    var heads = document.querySelectorAll(".compare thead th");
+    document.querySelectorAll(".compare tbody tr").forEach(function (row) {
+      Array.prototype.forEach.call(row.children, function (cell, i) {
+        if (i > 0 && heads[i]) cell.setAttribute("data-label", heads[i].textContent.trim());
+      });
+    });
   }
 
   var lang = storedLang() || ((navigator.language || "ar").toLowerCase().indexOf("ar") === 0 ? "ar" : "en");
@@ -246,9 +264,13 @@
       card.classList.toggle("recommended", card.getAttribute("data-os") === os);
     });
     var hero = document.getElementById("heroDownload");
+    var stickyLabel = document.getElementById("stickyLabel");
     if (os && hero) {
-      var label = hero.querySelector("span");
-      label.textContent = (lang === "ar" ? "حمّل لـ " : "Download for ") + NAMES[os];
+      var text = (lang === "ar" ? "حمّل لـ " : "Download for ") + NAMES[os];
+      hero.querySelector("span").textContent = text;
+      if (stickyLabel) stickyLabel.textContent = text;
+      // Linux visitors go straight to the one-line install.
+      if (os === "linux") { hero.href = "#linux"; stickyLabel.parentNode.href = "#linux"; }
     }
   }
 
@@ -338,6 +360,34 @@
   }
 
   document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Phone menu: opens under the header, closes on a link, Escape, or a tap outside.
+  var header = document.querySelector(".site-header");
+  var menuBtn = document.getElementById("menuBtn");
+  var mobileMenu = document.getElementById("mobileMenu");
+  function setMenu(open) {
+    mobileMenu.hidden = !open;
+    menuBtn.setAttribute("aria-expanded", String(open));
+    header.classList.toggle("menu-open", open);
+  }
+  if (menuBtn && mobileMenu) {
+    menuBtn.addEventListener("click", function () { setMenu(mobileMenu.hidden); });
+    mobileMenu.addEventListener("click", function (e) { if (e.target.closest("a")) setMenu(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !mobileMenu.hidden) { setMenu(false); menuBtn.focus(); } });
+    document.addEventListener("click", function (e) { if (!mobileMenu.hidden && !header.contains(e.target)) setMenu(false); });
+    window.addEventListener("resize", function () { if (window.innerWidth > 920 && !mobileMenu.hidden) setMenu(false); });
+  }
+
+  // Phone download bar: appears once the hero buttons scroll away, hides at the download section.
+  var sticky = document.getElementById("stickyCta");
+  if (sticky && "IntersectionObserver" in window) {
+    var heroGone = false, atDownloads = false;
+    var update = function () { sticky.classList.toggle("show", heroGone && !atDownloads); };
+    new IntersectionObserver(function (entries) { heroGone = !entries[0].isIntersecting; update(); })
+      .observe(document.querySelector(".hero-ctas"));
+    new IntersectionObserver(function (entries) { atDownloads = entries[0].isIntersecting; update(); }, { rootMargin: "0px 0px -20% 0px" })
+      .observe(document.getElementById("download"));
+  }
 
   // Start once everything above is defined.
   applyLang(lang);
