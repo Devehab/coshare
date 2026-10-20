@@ -72,8 +72,20 @@ jobs:
         run: |
           $p = Start-Process -FilePath "dist\CoShare-Setup-${{ matrix.arch }}.exe" -ArgumentList "/S" -Wait -PassThru
           if ($p.ExitCode -ne 0) { exit 1 }
-          $exe = "$env:LOCALAPPDATA\Programs\CoShare\CoShare.exe"
-          if (-not (Test-Path $exe)) { Write-Error "not installed at $exe"; exit 1 }
+          # The one-click installer can hand off to a second process, so wait for the files to land.
+          $places = @("$env:LOCALAPPDATA\Programs", "$env:ProgramFiles", "${env:ProgramFiles(x86)}")
+          $exe = $null
+          for ($i = 0; $i -lt 60 -and -not $exe; $i++) {
+            $exe = Get-ChildItem -Path $places -Recurse -Depth 2 -Filter CoShare.exe -ErrorAction SilentlyContinue |
+              Select-Object -First 1 -ExpandProperty FullName
+            if (-not $exe) { Start-Sleep -Seconds 2 }
+          }
+          if (-not $exe) {
+            Get-ChildItem "$env:LOCALAPPDATA\Programs" -ErrorAction SilentlyContinue
+            Write-Error "CoShare.exe not found after installing"; exit 1
+          }
+          Write-Output "installed at $exe"
+          Start-Sleep -Seconds 3
           Get-Process CoShare -ErrorAction SilentlyContinue | Stop-Process -Force
           $env:COSHARE_SELF_TEST_OUT = "$env:RUNNER_TEMP\installed.json"
           $p = Start-Process -FilePath $exe -ArgumentList "--self-test" -Wait -PassThru
@@ -90,12 +102,18 @@ jobs:
       - name: Install on clean distributions and self-test (Linux)
         if: matrix.platform == 'linux'
         run: |
-          run() { echo "::group::$1 ← $2"; docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/s:ro" "$1" bash /s/install-test.sh "/dist/$2"; echo "::endgroup::"; }
+          failed=""
+          run() {
+            echo "::group::$1 ← $2"
+            docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/s:ro" "$1" bash /s/install-test.sh "/dist/$2" || failed="$failed $1:$2"
+            echo "::endgroup::"
+          }
           run ubuntu:22.04 CoShare-${{ matrix.deb }}.deb
           run ubuntu:24.04 CoShare-${{ matrix.deb }}.deb
           run debian:12 CoShare-${{ matrix.deb }}.deb
           run fedora:41 CoShare-${{ matrix.rpm }}.rpm
           run ubuntu:22.04 CoShare-${{ matrix.appimage }}.AppImage
+          if [ -n "$failed" ]; then echo "::error::install test failed on:$failed"; exit 1; fi
 
       - uses: actions/upload-artifact@v4
         with:
