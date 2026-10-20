@@ -1,6 +1,6 @@
 'use strict';
 // CoShare for Windows and Linux: tray app + window around the shared sync engine.
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, protocol, net, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, nativeTheme, ipcMain, shell, protocol, net, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -62,7 +62,8 @@ function applyLaunchAtLogin(enabled) {
 function createWindow() {
   win = new BrowserWindow({
     width: 440, height: 700, minWidth: 380, minHeight: 520, show: false, title: 'CoShare',
-    icon: path.join(ASSETS, 'icon.png'), autoHideMenuBar: true, backgroundColor: '#0b1020',
+    icon: path.join(ASSETS, 'icon.png'), autoHideMenuBar: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#13120f' : '#f5f0e8', // the page's --bg, shown before it paints
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
   });
   win.setMenuBarVisibility(false);

@@ -60,10 +60,10 @@ function renderHeader() {
   const p = state.presence;
   const n = state.connected.length;
   let text, color;
-  if (p.state === 'paused') { text = 'متوقف — منفصل عن الشبكة'; color = 'var(--indigo)'; }
-  else if (p.state === 'quiet') { text = `وقت الإيقاف حتى ${plain(clock(p.until))}`; color = 'var(--indigo)'; }
-  else if (!n) { text = 'بانتظار أجهزة على نفس الشبكة…'; color = 'var(--orange)'; }
-  else { text = `متصل بـ ${n} ${n === 1 ? 'جهاز' : 'أجهزة'}`; color = 'var(--green)'; }
+  if (p.state === 'paused') { text = 'متوقف — منفصل عن الشبكة'; color = 'var(--paused)'; }
+  else if (p.state === 'quiet') { text = `وقت الإيقاف حتى ${plain(clock(p.until))}`; color = 'var(--paused)'; }
+  else if (!n) { text = 'بانتظار أجهزة على نفس الشبكة…'; color = 'var(--waiting)'; }
+  else { text = `متصل بـ ${n} ${n === 1 ? 'جهاز' : 'أجهزة'}`; color = 'var(--connected)'; }
   if (state.pulse === 'sent') text = '↑ ' + text;
   if (state.pulse === 'received') text = '↓ ' + text;
   $('statusText').textContent = text;
@@ -135,11 +135,11 @@ $('tab-groups').addEventListener('click', (event) => {
 
 function groupStatus(group) {
   const p = state.presence.state;
-  if (p === 'paused') return ['متوقفة — CoShare موقوف على هالجهاز', 'indigo'];
-  if (p === 'quiet') return ['متوقفة — وقت الإيقاف', 'indigo'];
+  if (p === 'paused') return ['متوقفة — CoShare موقوف على هالجهاز', 'paused'];
+  if (p === 'quiet') return ['متوقفة — وقت الإيقاف', 'paused'];
   const n = group.members.length;
-  if (!n) return ['فعّالة · بانتظار أجهزة', 'orange'];
-  return [`فعّالة · ${n === 1 ? 'جهاز متصل' : `${n} أجهزة متصلة`}`, 'green'];
+  if (!n) return ['فعّالة · بانتظار أجهزة', 'waiting'];
+  return [`فعّالة · ${n === 1 ? 'جهاز متصل' : `${n} أجهزة متصلة`}`, 'connected'];
 }
 
 // Colours are classes: the page's CSP doesn't allow inline style attributes.
@@ -262,12 +262,12 @@ function renderGroupDetail() {
   $('detailDevices').innerHTML = `
     <li class="row-item"><span class="dev-icon">${icon}</span>
       <span class="body"><strong>${esc(state.deviceName)}</strong><span class="meta">هذا الجهاز</span></span>
-      <span class="dot ${online ? 'green' : 'indigo'}"></span></li>` +
+      <span class="dot ${online ? 'connected' : 'paused'}"></span></li>` +
     group.members.map((p) => {
       const [pIcon, pName] = PLATFORMS[p.platform] || ['•', 'جهاز'];
       return `<li class="row-item"><span class="dev-icon">${pIcon}</span>
         <span class="body"><strong>${esc(p.name)}</strong><span class="meta">${pName} · ${p.isDirect ? 'اتصال مباشر' : 'على نفس الشبكة'}</span></span>
-        <span class="dot green"></span></li>`;
+        <span class="dot connected"></span></li>`;
     }).join('');
   $('detailNoDevices').hidden = group.members.length > 0;
   renderInvite(group);

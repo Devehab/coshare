@@ -21,7 +21,8 @@ extraMetadata:
   main: src/main/main.js
 
 win:
-  icon: build/icon.png
+  # Hand-sized 16–32 px frames (scripts/make-icons.sh) stay crisp in the taskbar and tray.
+  icon: build/icon.ico
   # One installer per architecture (the build passes --x64 or --arm64).
   target: [nsis]
   artifactName: CoShare-Setup-${arch}.${ext}

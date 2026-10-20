@@ -170,7 +170,7 @@ struct ContentView: View {
     private var statusRow: some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(!engine.presence.isOnline ? Color.indigo : (engine.connectedPeers.isEmpty ? Color.orange : Color.green))
+                .fill(!engine.presence.isOnline ? Color.paused : (engine.connectedPeers.isEmpty ? Color.waiting : Color.connected))
                 .frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 2) {
                 Text(statusTitle).font(.headline)
@@ -200,7 +200,7 @@ struct ContentView: View {
     private var backgroundRow: some View {
         HStack(spacing: 10) {
             Image(systemName: keeper.isRunning ? "bolt.horizontal.circle.fill" : "moon.zzz")
-                .foregroundColor(keeper.isRunning ? .green : .orange)
+                .foregroundColor(keeper.isRunning ? .connected : .waiting)
             VStack(alignment: .leading, spacing: 2) {
                 Text(keeper.isRunning ? "يعمل بالخلفية باستمرار" : "يعمل فقط والتطبيق مفتوح")
                     .font(.subheadline)

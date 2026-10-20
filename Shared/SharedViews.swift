@@ -97,7 +97,7 @@ struct HistoryRow: View {
             }
             Spacer(minLength: 0)
             if copied {
-                Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                Image(systemName: "checkmark.circle.fill").foregroundColor(.connected)
             }
         }
     }
@@ -181,14 +181,14 @@ struct DeviceRow: View {
     let symbol: String
     let name: String
     let detail: String
-    var dot: Color = .green
+    var dot: Color = .connected
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: symbol)
                 .font(.title3)
                 .frame(width: 30)
-                .foregroundColor(.accentColor)
+                .foregroundColor(.signal)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name).font(.callout).lineLimit(1)
                 Text(detail).font(.caption).foregroundColor(.secondary)
@@ -251,6 +251,69 @@ extension Color {
         Color.secondary.opacity(0.08)
         #endif
     }
+
+    // CoShare's palette, shared with the website: one signal colour for actions and selection,
+    // teal for connected/secure, amber while waiting for devices, warm grey while paused.
+    static let signal = adaptive(light: 0xd24a22, dark: 0xff6b3d)
+    static let connected = adaptive(light: 0x0f7067, dark: 0x3fc3b2)
+    static let waiting = adaptive(light: 0xd9971c, dark: 0xf2b23c)
+    static let paused = adaptive(light: 0x857d6e, dark: 0x9a9182)
+
+    private static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        func rgb(_ hex: UInt32) -> (CGFloat, CGFloat, CGFloat) {
+            (CGFloat(hex >> 16 & 0xff) / 255, CGFloat(hex >> 8 & 0xff) / 255, CGFloat(hex & 0xff) / 255)
+        }
+        #if os(iOS)
+        return Color(uiColor: UIColor { traits in
+            let (r, g, b) = rgb(traits.userInterfaceStyle == .dark ? dark : light)
+            return UIColor(red: r, green: g, blue: b, alpha: 1)
+        })
+        #else
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            let (r, g, b) = rgb(appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
+            return NSColor(srgbRed: r, green: g, blue: b, alpha: 1)
+        })
+        #endif
+    }
+}
+
+/// The CoShare mark (website/assets/logo.svg): two paper documents on the signal square.
+struct BrandMark: View {
+    var size: CGFloat = 28
+
+    var body: some View {
+        Canvas { context, canvas in
+            let s = canvas.width / 64
+            func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * s, y: y * s) }
+            let vermilion = Color(red: 0.824, green: 0.290, blue: 0.133)
+            let paper = Color(red: 0.961, green: 0.941, blue: 0.910)
+
+            context.fill(Path(roundedRect: CGRect(x: 0, y: 0, width: 64 * s, height: 64 * s), cornerRadius: 16 * s),
+                         with: .color(vermilion))
+            context.fill(Path(roundedRect: CGRect(x: 25 * s, y: 12 * s, width: 24 * s, height: 31 * s), cornerRadius: 5 * s),
+                         with: .color(paper.opacity(0.5)))
+            var front = Path()
+            front.move(to: p(19.5, 21))
+            front.addLine(to: p(32, 21))
+            front.addLine(to: p(40, 29))
+            front.addArc(tangent1End: p(40, 52), tangent2End: p(36, 52), radius: 4 * s)
+            front.addArc(tangent1End: p(15.5, 52), tangent2End: p(15.5, 48), radius: 4 * s)
+            front.addArc(tangent1End: p(15.5, 21), tangent2End: p(19.5, 21), radius: 4 * s)
+            front.closeSubpath()
+            context.fill(front, with: .color(paper))
+            var fold = Path()
+            fold.move(to: p(32, 21))
+            fold.addArc(tangent1End: p(32, 29), tangent2End: p(40, 29), radius: 2.5 * s)
+            fold.addLine(to: p(40, 29))
+            context.stroke(fold, with: .color(vermilion), style: StrokeStyle(lineWidth: 2.4 * s, lineJoin: .round))
+            var lines = Path()
+            lines.move(to: p(22, 38.5)); lines.addLine(to: p(33, 38.5))
+            lines.move(to: p(22, 44)); lines.addLine(to: p(29, 44))
+            context.stroke(lines, with: .color(vermilion), style: StrokeStyle(lineWidth: 2.6 * s, lineCap: .round))
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
 }
 
 extension View {
@@ -295,8 +358,7 @@ struct GroupBadge: View {
             .frame(width: size, height: size)
             .background(
                 RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                    .fill(LinearGradient(colors: [Color(red: 0.24, green: 0.55, blue: 1), Color(red: 0.36, green: 0.36, blue: 0.94)],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(Color.signal)
             )
     }
 }
@@ -314,7 +376,7 @@ struct ActionTile: View {
             VStack(spacing: 5) {
                 Image(systemName: symbol)
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(selected ? .white : .accentColor)
+                    .foregroundColor(selected ? .white : .signal)
                 Text(title).font(.callout.weight(.semibold))
                 Text(subtitle)
                     .font(.caption2)
@@ -326,10 +388,10 @@ struct ActionTile: View {
             .padding(.vertical, 14)
             .padding(.horizontal, 8)
             .frame(maxWidth: .infinity, minHeight: 100)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(selected ? Color.accentColor : Color.panel))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(selected ? Color.signal : Color.panel))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(selected ? 0 : 0.35), lineWidth: 1)
+                    .strokeBorder(Color.signal.opacity(selected ? 0 : 0.35), lineWidth: 1)
             )
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
@@ -352,12 +414,12 @@ struct GroupStatusLabel: View {
 
     private var status: (text: String, color: Color) {
         switch engine.presence {
-        case .paused: return ("متوقفة — CoShare موقوف على هالجهاز", .indigo)
-        case .quiet: return ("متوقفة — وقت الإيقاف", .indigo)
+        case .paused: return ("متوقفة — CoShare موقوف على هالجهاز", .paused)
+        case .quiet: return ("متوقفة — وقت الإيقاف", .paused)
         case .online:
             let count = engine.members(of: group).count
-            if count == 0 { return ("فعّالة · بانتظار أجهزة", .orange) }
-            return ("فعّالة · " + (count == 1 ? "جهاز متصل" : "\(count) أجهزة متصلة"), .green)
+            if count == 0 { return ("فعّالة · بانتظار أجهزة", .waiting) }
+            return ("فعّالة · " + (count == 1 ? "جهاز متصل" : "\(count) أجهزة متصلة"), .connected)
         }
     }
 }
@@ -459,7 +521,7 @@ struct GroupDetailView: View {
                 SectionTitle("الأجهزة المتصلة (\(members.count + 1))")
                 VStack(spacing: 0) {
                     DeviceRow(symbol: DevicePlatform.current.symbolName, name: settings.deviceName, detail: "هذا الجهاز",
-                              dot: engine.presence.isOnline ? .green : .indigo)
+                              dot: engine.presence.isOnline ? .connected : .paused)
                     ForEach(members) { peer in
                         Divider()
                         DeviceRow(symbol: peer.platform.symbolName, name: peer.name,
@@ -756,7 +818,7 @@ struct QuietScheduleEditor: View {
                                 .minimumScaleFactor(0.7)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 7)
-                                .background(Capsule().fill(isOn ? Color.accentColor : Color.secondary.opacity(0.15)))
+                                .background(Capsule().fill(isOn ? Color.signal : Color.secondary.opacity(0.15)))
                                 .foregroundColor(isOn ? .white : .primary)
                         }
                         .buttonStyle(.borderless)
@@ -812,7 +874,7 @@ struct PresenceBanner: View {
 
     private func banner(symbol: String, text: String, button: String) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: symbol).foregroundColor(.indigo)
+            Image(systemName: symbol).foregroundColor(.signal)
             Text(text).font(.callout).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             Button(button) { engine.resumeToday() }
@@ -820,6 +882,6 @@ struct PresenceBanner: View {
                 .controlSize(.small)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.indigo.opacity(0.12)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.signal.opacity(0.1)))
     }
 }

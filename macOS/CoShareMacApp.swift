@@ -13,6 +13,7 @@ struct CoShareMacApp: App {
                 .environmentObject(engine.history)
                 .environmentObject(engine.settings)
                 .environmentObject(engine.log)
+                .tint(.signal)
         } label: {
             MenuBarLabel(engine: engine, settings: engine.settings)
         }
@@ -26,6 +27,7 @@ struct CoShareMacApp: App {
                 .environmentObject(engine.history)
                 .environmentObject(engine.settings)
                 .environmentObject(engine.log)
+                .tint(.signal)
         }
         .windowResizability(.contentSize)
     }

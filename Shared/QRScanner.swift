@@ -125,7 +125,7 @@ struct QRJoinView: View {
                 }
                 if let joinedName {
                     VStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill").font(.system(size: 54)).foregroundColor(.green)
+                        Image(systemName: "checkmark.circle.fill").font(.system(size: 54)).foregroundColor(.connected)
                         Text("انضممت لمجموعة «\(joinedName)»").font(.headline).foregroundColor(.white)
                     }
                 } else if scanner.state == .denied {

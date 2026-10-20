@@ -1,5 +1,6 @@
 #!/bin/bash
 # Renders the CoShare intro (Arabic + English) to MP4 and makes posters for the website.
+# (The site's social image, website/assets/og-image.png, is designed separately and left alone.)
 #   video/render.sh            → both languages
 #   video/render.sh en         → one language
 # Needs ffmpeg (brew install ffmpeg). Add the ElevenLabs voice-over afterwards with video/mux.sh.
@@ -41,9 +42,5 @@ for LANG_CODE in ${1:-ar en}; do
   fi
 done
 
-# Social preview image for the landing page (1200×630).
-build/tools/Render "http://127.0.0.1:$PORT/video/animation/index.html?lang=en&render=1" --still 58 build/og-full.png
-sips -z 675 1200 build/og-full.png --out build/og-1200.png >/dev/null
-sips -c 630 1200 build/og-1200.png --out "$ROOT/website/assets/og-image.png" >/dev/null
 echo "✓ Done: $OUT"
 ls -lh "$OUT"

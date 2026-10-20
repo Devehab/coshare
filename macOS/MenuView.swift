@@ -67,9 +67,7 @@ struct MenuView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: "doc.on.clipboard.fill")
-                .font(.title2)
-                .foregroundColor(.accentColor)
+            BrandMark(size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text("CoShare").font(.headline)
                 HStack(spacing: 5) {
@@ -100,8 +98,8 @@ struct MenuView: View {
     }
 
     private var statusColor: Color {
-        if !engine.presence.isOnline { return .indigo }
-        return engine.connectedPeers.isEmpty ? .orange : .green
+        if !engine.presence.isOnline { return .paused }
+        return engine.connectedPeers.isEmpty ? .waiting : .connected
     }
 
     private var footer: some View {
@@ -309,7 +307,7 @@ private struct HoverRowStyle: ButtonStyle {
         var body: some View {
             configuration.label
                 .background(
-                    Color.accentColor.opacity(configuration.isPressed ? 0.25 : (hovering ? 0.1 : 0))
+                    Color.signal.opacity(configuration.isPressed ? 0.25 : (hovering ? 0.1 : 0))
                 )
                 .onHover { hovering = $0 }
         }

@@ -19,6 +19,7 @@ struct CoShareApp: App {
                 .environmentObject(engine.settings)
                 .environmentObject(engine.log)
                 .environmentObject(keeper)
+                .tint(.signal)
                 .onValueChange(of: scenePhase) { phase in
                     AppLifecycle.shared.handle(phase)
                 }
