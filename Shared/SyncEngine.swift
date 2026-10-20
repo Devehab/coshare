@@ -56,8 +56,8 @@ final class SyncEngine: ObservableObject {
         let environment = AppEnvironment.current
         self.pasteboard = pasteboard
         settings = AppSettings(defaults: environment.defaults, defaultName: DevicePlatform.defaultDeviceName)
-        history = HistoryStore(directory: environment.dataDirectory)
-        log = ActivityLog(directory: environment.dataDirectory)
+        history = HistoryStore(directory: environment.dataDirectory, retentionHours: settings.historyRetentionHours)
+        log = ActivityLog(directory: environment.dataDirectory, retentionHours: settings.historyRetentionHours)
         if let latest = history.items.first {
             currentHash = latest.hash
             currentDate = latest.date
@@ -91,17 +91,21 @@ final class SyncEngine: ObservableObject {
         return peers.filter { Self.peer($0, isIn: secret) }
     }
 
-    func createGroup(name: String, password: String) throws {
+    @discardableResult
+    func createGroup(name: String, password: String) throws -> GroupMembership {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { throw GroupError.nameMissing }
         guard password.count >= GroupMembership.minimumPasswordLength else { throw GroupError.passwordTooShort }
-        settings.groups.append(GroupMembership(id: GroupMembership.newID(), name: name, password: password, joinedAt: Date()))
+        let group = GroupMembership(id: GroupMembership.newID(), name: name, password: password, joinedAt: Date())
+        settings.groups.append(group)
         log.add("أنشأت مجموعة «\(name)»")
         restartNetwork()
+        return group
     }
 
     /// Checks the password against the tag the group advertises, then joins for good.
-    func join(_ nearby: NearbyGroup, password: String) async throws {
+    @discardableResult
+    func join(_ nearby: NearbyGroup, password: String) async throws -> GroupMembership {
         let group = nearby.group
         let key = await deriveKey(groupID: group.id, password: password)
         guard key.tag == group.tag else {
@@ -109,9 +113,11 @@ final class SyncEngine: ObservableObject {
             throw GroupError.wrongPassword
         }
         settings.groups.removeAll { $0.id == group.id }
-        settings.groups.append(GroupMembership(id: group.id, name: group.name, password: password, joinedAt: Date()))
+        let membership = GroupMembership(id: group.id, name: group.name, password: password, joinedAt: Date())
+        settings.groups.append(membership)
         log.add("انضممت لمجموعة «\(group.name)»")
         restartNetwork()
+        return membership
     }
 
     /// Joins from an invite link (QR code). The link carries the password, so no check is needed.
@@ -181,12 +187,26 @@ final class SyncEngine: ObservableObject {
         RunLoop.main.add(poll, forMode: .common)
         pollTimer = poll
 
-        maintenanceTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+        // Every minute, so even a one-hour retention is kept to the minute.
+        let maintenance = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.history.purge()
                 self?.log.purge()
             }
         }
+        maintenance.tolerance = 10
+        RunLoop.main.add(maintenance, forMode: .common)
+        maintenanceTimer = maintenance
+        settings.$historyRetentionHours
+            .removeDuplicates()
+            .sink { [weak self] hours in
+                guard let self else { return }
+                self.history.retention = TimeInterval(hours * 3600)
+                self.log.retention = TimeInterval(hours * 3600)
+                self.history.purge()
+                self.log.purge()
+            }
+            .store(in: &cancellables)
 
         settings.$deviceName
             .dropFirst()
@@ -258,7 +278,7 @@ final class SyncEngine: ObservableObject {
         switch state {
         case .online: return "CoShare متصل بالشبكة"
         case .paused: return "متوقف — CoShare منفصل تماماً عن الشبكة"
-        case .quiet(let until): return "وقت الإيقاف — CoShare منفصل تماماً عن الشبكة حتى \(Format.clock(until))"
+        case .quiet(let until): return "وقت الإيقاف — CoShare منفصل تماماً عن الشبكة حتى \(Format.clock(until, h24: settings.use24Hour))"
         }
     }
 

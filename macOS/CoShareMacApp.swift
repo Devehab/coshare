@@ -43,13 +43,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Two copies would share one device ID and clipboard and step on each other.
         // The copy launched last wins (e.g. a fresh build run from Xcode).
-        if let bundleID = Bundle.main.bundleIdentifier {
+        // A test copy with its own COSHARE_PROFILE has its own device ID and data, so it leaves the real one alone.
+        let isTestCopy = ProcessInfo.processInfo.environment["COSHARE_PROFILE"] != nil
+        if !isTestCopy, let bundleID = Bundle.main.bundleIdentifier {
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
                 .filter { $0 != NSRunningApplication.current }
                 .forEach { $0.terminate() }
         }
         let engine = SyncEngine.shared
         engine.start()
+        if DevSnapshots.isRequested {
+            Task { await DevSnapshots.run() }
+            return
+        }
+        if isTestCopy { return }
         LoginItem.enableOnFirstLaunch(log: engine.log)
         GlobalShortcut.register()
         dockSubscription = engine.settings.$showInDock.sink { show in

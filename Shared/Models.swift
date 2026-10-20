@@ -38,6 +38,18 @@ enum DevicePlatform: String, Codable {
         case .other: return "questionmark.circle"
         }
     }
+
+    var displayName: String {
+        switch self {
+        case .mac: return "ماك"
+        case .iphone: return "آيفون"
+        case .ipad: return "آيباد"
+        case .windows: return "ويندوز"
+        case .linux: return "لينكس"
+        case .android: return "أندرويد"
+        case .other: return "جهاز"
+        }
+    }
 }
 
 /// The clipboard payload that moves between devices.
@@ -144,6 +156,9 @@ enum Storage {
         guard let data = try? JSONEncoder().encode(value) else { return }
         queue.async { try? data.write(to: url, options: .atomic) }
     }
+
+    /// Waits for pending writes (before quitting, or before reading a file back).
+    static func flush() { queue.sync {} }
 
     static func read<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
         guard let data = try? Data(contentsOf: url) else { return nil }

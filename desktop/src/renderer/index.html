@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data: coshare-blob:; style-src 'self'; script-src 'self'; media-src 'self' mediastream: blob:">
+  <title>CoShare</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <img src="../assets/icon.png" alt="" class="logo">
+    <div class="title">
+      <strong>CoShare</strong>
+      <span class="status"><i id="statusDot"></i><span id="statusText">…</span></span>
+    </div>
+    <button id="pauseBtn" class="icon-btn" title="إيقاف">⏸</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button data-tab="history" class="active">الحافظة</button>
+    <button data-tab="groups">المجموعات</button>
+    <button data-tab="log">السجل</button>
+    <button data-tab="settings">الإعدادات</button>
+  </nav>
+
+  <div id="banner" class="banner" hidden>
+    <span id="bannerText"></span>
+    <button id="bannerBtn" class="primary small">استئناف اليوم</button>
+  </div>
+
+  <main>
+    <!-- History -->
+    <section id="tab-history" class="pane active">
+      <ul id="historyList" class="list"></ul>
+      <p id="historyEmpty" class="empty">لا شيء بعد — انسخ أي نص أو صورة على أي جهاز وسيظهر هنا.</p>
+      <p id="retentionNote" class="hint center"></p>
+    </section>
+
+    <!-- Groups: home (create / join + my groups), create, join (nearby or QR), one group -->
+    <section id="tab-groups" class="pane">
+      <div id="route-home" class="route">
+        <div id="onboarding" class="card warn" hidden>
+          <strong>ابدأ من هون</strong>
+          <p>هالجهاز مش بأي مجموعة لهلق. أنشئ مجموعة جديدة لأجهزتك، أو انضم لمجموعة موجودة.</p>
+        </div>
+        <div class="tiles">
+          <button class="tile" data-go="create">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 7v10M7 12h10" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
+            <strong>إنشاء مجموعة</strong><small>مجموعة جديدة بكلمة سر</small>
+          </button>
+          <button class="tile" data-go="join">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="8" r="4"/><path d="M3 20c0-3.9 3.1-7 7-7 1.4 0 2.7.4 3.8 1.1"/><path d="M18 14v6M15 17h6"/></svg>
+            <strong>انضمام لمجموعة</strong><small>من الشبكة أو برمز QR</small>
+          </button>
+        </div>
+        <p id="nearbyHint" class="hint" hidden></p>
+        <div id="myGroupsBox" hidden>
+          <h3 id="myGroupsTitle">مجموعاتي</h3>
+          <div id="myGroups" class="card rows"></div>
+          <p class="hint">اضغط على المجموعة لتشوف أجهزتها، أو لتضيف جهاز جديد برمز QR. الجهاز ممكن يكون بأكتر من مجموعة، وكل نسخ بيوصل لكل مجموعاته.</p>
+        </div>
+      </div>
+
+      <div id="route-create" class="route" hidden>
+        <button class="back" data-go="home">المجموعات</button>
+        <h2>إنشاء مجموعة</h2>
+        <form id="createForm" class="card form">
+          <label class="field">اسم المجموعة
+            <input id="groupName" placeholder="مثلاً: أجهزة إيهاب" autocomplete="off">
+          </label>
+          <label class="field">كلمة السر
+            <input id="groupPassword" type="password" placeholder="6 أحرف أو أكثر" autocomplete="new-password">
+          </label>
+          <button class="primary wide" type="submit">إنشاء المجموعة</button>
+          <p id="createError" class="error" hidden></p>
+        </form>
+        <p class="hint">بعد الإنشاء بيطلعلك رمز QR: امسحه من أجهزتك التانية لتنضم. كل جهاز بالمجموعة بيضل فيها حتى بعد إعادة التشغيل أو تغيير الشبكة، وكلمة السر بتشفّر كل شي بينكم.</p>
+      </div>
+
+      <div id="route-join" class="route" hidden>
+        <button class="back" data-go="home">المجموعات</button>
+        <h2>انضمام لمجموعة</h2>
+        <div class="tiles">
+          <button class="tile" data-method="nearby">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+            <strong>المجموعات القريبة</strong><small>على نفس الشبكة</small>
+          </button>
+          <button class="tile" data-method="scan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><g stroke-width="1.6"><rect x="7.5" y="7.5" width="3.5" height="3.5" rx=".6"/><rect x="13" y="7.5" width="3.5" height="3.5" rx=".6"/><rect x="7.5" y="13" width="3.5" height="3.5" rx=".6"/><path d="M13 13h3.5v3.5"/></g></svg>
+            <strong>مسح رمز QR</strong><small>بالكاميرا، بدون كلمة سر</small>
+          </button>
+        </div>
+        <div id="joinNearby">
+          <div id="nearbyEmpty" class="card center searching">
+            <span class="spinner"></span>
+            <div>عم ندوّر على مجموعات على نفس الشبكة…</div>
+            <p class="hint">لازم يكون CoShare شغّال على جهاز بالمجموعة، وعلى نفس الواي فاي أو الـ Hotspot. إذا ما ظهرت، استعمل «مسح رمز QR».</p>
+          </div>
+          <div id="nearbyBox" hidden>
+            <h3>اختر مجموعة وادخل كلمة سرها</h3>
+            <div id="nearby" class="card rows"></div>
+          </div>
+        </div>
+        <div id="scanner" class="card" hidden>
+          <video id="video" playsinline muted></video>
+          <canvas id="canvas" hidden></canvas>
+          <p id="scanMsg" class="hint center"></p>
+        </div>
+      </div>
+
+      <div id="route-group" class="route" hidden>
+        <button class="back" data-go="home">المجموعات</button>
+        <div class="group-head">
+          <span class="group-badge big"></span>
+          <div><h2 id="detailName"></h2><span id="detailStatus" class="status"></span></div>
+        </div>
+        <h3 id="detailDevicesTitle">الأجهزة المتصلة</h3>
+        <ul id="detailDevices" class="card rows devices"></ul>
+        <p id="detailNoDevices" class="hint" hidden>ما في أجهزة تانية متصلة هلق. تأكد إن CoShare شغّال عليها وإنها على نفس الشبكة، أو أضف جهاز جديد من تحت.</p>
+        <h3>إضافة جهاز جديد</h3>
+        <div id="inviteBox" class="card invite"></div>
+        <div id="leaveBox" class="leave"></div>
+      </div>
+    </section>
+
+    <!-- Log -->
+    <section id="tab-log" class="pane">
+      <ul id="logList" class="log"></ul>
+    </section>
+
+    <!-- Settings -->
+    <section id="tab-settings" class="pane">
+      <label class="field">اسم الجهاز
+        <input id="deviceName" autocomplete="off">
+      </label>
+      <div class="card">
+        <label class="toggle"><input type="checkbox" id="quietEnabled"> إيقاف تلقائي بأوقات محددة</label>
+        <div id="quietBox" hidden>
+          <div id="days" class="days"></div>
+          <div class="times">من <input type="time" id="quietStart"> إلى <input type="time" id="quietEnd"></div>
+          <p class="hint">بهالأوقات CoShare بيوقف كلياً على هالجهاز: ما بيقرأ الحافظة، ولا بيبعت ولا بيستقبل، ولا بيظهر على الشبكة. وأجهزتك التانية بتعرف جدوله، فما بتحاول تتصل فيه.</p>
+        </div>
+      </div>
+      <div class="card">
+        <label class="field">الاحتفاظ بالسجل
+          <select id="retention">
+            <option value="1">ساعة واحدة</option>
+            <option value="12">١٢ ساعة</option>
+            <option value="24">يوم واحد (افتراضي)</option>
+            <option value="72">٣ أيام</option>
+            <option value="168">أسبوع</option>
+          </select>
+        </label>
+        <p class="hint">الحافظة والسجل، مع الصور ولقطات الشاشة المنسوخة، بينحذفوا تلقائياً بعد هالمدة (الحد الأقصى أسبوع).</p>
+        <label class="field">صيغة الوقت
+          <select id="timeFormat">
+            <option value="12">١٢ ساعة (AM/PM)</option>
+            <option value="24">٢٤ ساعة</option>
+          </select>
+        </label>
+      </div>
+      <label class="toggle"><input type="checkbox" id="syncImages"> مزامنة الصور ولقطات الشاشة</label>
+      <label class="toggle"><input type="checkbox" id="launchAtLogin"> التشغيل تلقائياً عند بدء الجهاز</label>
+      <div class="row">
+        <button id="clearBtn">مسح السجل والحافظة</button>
+        <button id="folderBtn">فتح مجلد البيانات</button>
+      </div>
+      <p class="hint">يعمل CoShare فقط على الشبكة المحلية، وكل البيانات مشفّرة بكلمة سر المجموعة. <span id="version"></span></p>
+    </section>
+  </main>
+
+  <footer>
+    <button id="sendBtn">إرسال الحافظة الآن</button>
+  </footer>
+
+  <script src="../../node_modules/jsqr/dist/jsQR.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

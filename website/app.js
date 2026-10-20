@@ -121,8 +121,13 @@
     "dl.ios.req": "iOS & iPadOS 16 or later",
     "dl.mac.req": "macOS 13 or later · Apple Silicon & Intel",
     "dl.android.req": "Android 8 or later · phones & tablets",
-    "dl.win.req": "Windows 10 & 11 · 64-bit",
-    "dl.linux.req": "Ubuntu, Debian & Fedora · AppImage & .deb",
+    "dl.win.req": "Windows 10 & 11 · Intel, AMD & ARM",
+    "dl.win.arm": "ARM version (Snapdragon)",
+    "dl.linux.req": "Ubuntu, Debian, Mint, Fedora & every distro",
+    "dl.linux.btn": "Download .deb (Ubuntu & Debian)",
+    "dl.linux.rpm": ".rpm (Fedora)",
+    "dl.linux.appimage": "AppImage (any distro)",
+    "dl.linux.arm": "ARM",
     "dl.note": "Version 1.0 · Free · No account · No ads",
 
     "faq.kicker": "FAQ",
@@ -218,6 +223,12 @@
     return null;
   }
   var NAMES = { ios: "iPhone", mac: "Mac", android: "Android", windows: "Windows", linux: "Linux" };
+  if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues && detectOS() === "windows") {
+    navigator.userAgentData.getHighEntropyValues(["architecture"]).then(function (v) {
+      var main = document.getElementById("winDownload");
+      if (v.architecture === "arm" && main) main.href = main.href.replace("CoShare-Setup-x64.exe", "CoShare-Setup-arm64.exe");
+    }).catch(function () {});
+  }
   function highlightPlatform() {
     var os = detectOS();
     document.querySelectorAll(".dl-card").forEach(function (card) {
@@ -244,8 +255,10 @@
   }
   document.querySelectorAll(".dl-card a[data-platform]").forEach(function (link) {
     link.addEventListener("click", function (event) {
-      event.preventDefault();
       var href = link.getAttribute("href");
+      // Published builds live on GitHub Releases (another origin, so they can't be checked first).
+      if (/^https:\/\/github\.com\//.test(href)) return;
+      event.preventDefault();
       fetch(href, { method: "HEAD", cache: "no-store" }).then(function (response) {
         if (response.ok) { window.location.href = href; return; }
         throw new Error("missing");

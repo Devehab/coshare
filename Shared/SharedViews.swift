@@ -21,26 +21,32 @@ enum Format {
         return formatter
     }()
 
-    private static let clock: DateFormatter = {
+    private static func formatter(_ pattern: String) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.amSymbol = "AM"
+        formatter.pmSymbol = "PM"
+        formatter.dateFormat = pattern
         return formatter
-    }()
+    }
+
+    private static let time12 = formatter("h:mm:ss a")
+    private static let time24 = formatter("HH:mm:ss")
+    private static let clock12 = formatter("h:mm a")
+    private static let clock24 = formatter("HH:mm")
 
     static func ago(_ date: Date) -> String {
         Date().timeIntervalSince(date) < 10 ? "الآن" : relative.localizedString(for: date, relativeTo: Date())
     }
 
-    static func time(_ date: Date) -> String { clock.string(from: date) }
+    /// Log times: "3:45:12 PM", or "15:45:12" with the 24-hour setting.
+    static func time(_ date: Date, h24: Bool) -> String { ltr((h24 ? time24 : time12).string(from: date)) }
 
-    /// "5:00 م" style time for quiet-hour messages.
-    static func clock(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ar")
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: date)
-    }
+    /// "3:45 PM", or "15:45" with the 24-hour setting.
+    static func clock(_ date: Date, h24: Bool) -> String { ltr((h24 ? clock24 : clock12).string(from: date)) }
+
+    /// Keeps "3:45 PM" in that order inside Arabic text.
+    private static func ltr(_ text: String) -> String { "\u{2066}" + text + "\u{2069}" }
 
     /// Wrapped in a left-to-right isolate so "125 KB" doesn't turn into "KB 125" inside Arabic text.
     static func bytes(_ count: Int) -> String {
@@ -67,6 +73,7 @@ enum Thumbnailer {
 }
 
 struct HistoryRow: View {
+    @EnvironmentObject private var settings: AppSettings
     let item: HistoryItem
     let imageURL: URL?
     var copied = false
@@ -131,7 +138,65 @@ struct HistoryRow: View {
         case .received:
             source = "من \(item.deviceName)"
         }
-        return "\(source) · \(Format.ago(item.date))"
+        return "\(source) · \(Format.clock(item.date, h24: settings.use24Hour)) · \(Format.ago(item.date))"
+    }
+}
+
+/// "Kept for the last day — older items and their images are deleted automatically."
+struct RetentionNote: View {
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        Text("يُحفظ آخر \(HistoryRetention.label(settings.historyRetentionHours)) فقط، والأقدم يُحذف تلقائياً مع صوره")
+    }
+}
+
+/// Picker for how long history is kept (1 hour … 1 week).
+struct RetentionPicker: View {
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        Picker("الاحتفاظ بالسجل", selection: $settings.historyRetentionHours) {
+            ForEach(HistoryRetention.options, id: \.hours) { option in
+                Text(option.hours == HistoryRetention.defaultHours ? option.label + " (افتراضي)" : option.label).tag(option.hours)
+            }
+        }
+    }
+}
+
+/// 12-hour (AM/PM, default) or 24-hour times.
+struct TimeFormatPicker: View {
+    @EnvironmentObject private var settings: AppSettings
+
+    var body: some View {
+        Picker("صيغة الوقت", selection: $settings.use24Hour) {
+            Text("١٢ ساعة (AM/PM)").tag(false)
+            Text("٢٤ ساعة").tag(true)
+        }
+    }
+}
+
+/// A device in a group: icon, name, what it is and how it's connected.
+struct DeviceRow: View {
+    let symbol: String
+    let name: String
+    let detail: String
+    var dot: Color = .green
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .frame(width: 30)
+                .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name).font(.callout).lineLimit(1)
+                Text(detail).font(.caption).foregroundColor(.secondary)
+            }
+            Spacer(minLength: 0)
+            Circle().fill(dot).frame(width: 8, height: 8)
+        }
+        .padding(.vertical, 7)
     }
 }
 
@@ -140,18 +205,7 @@ struct PeerRow: View {
     var detail: String
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: peer.platform.symbolName)
-                .font(.title3)
-                .frame(width: 28)
-                .foregroundColor(.accentColor)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(peer.name).font(.callout)
-                Text(detail).font(.caption).foregroundColor(.secondary)
-            }
-            Spacer(minLength: 0)
-            Circle().fill(Color.green).frame(width: 8, height: 8)
-        }
+        DeviceRow(symbol: peer.platform.symbolName, name: peer.name, detail: detail)
     }
 }
 
@@ -172,65 +226,388 @@ struct QRCodeImage: View {
     }
 }
 
-/// One of this device's groups: who is online, invite (QR + password) and leave.
-struct GroupCard: View {
+// MARK: - Groups
+
+/// Screens inside "Groups": the list is the root, these open on top of it.
+enum GroupsRoute: Hashable {
+    case create
+    case join
+    case group(String)
+
+    var title: String {
+        switch self {
+        case .create: return "إنشاء مجموعة"
+        case .join: return "انضمام لمجموعة"
+        case .group: return "المجموعة"
+        }
+    }
+}
+
+extension Color {
+    static var panel: Color {
+        #if os(iOS)
+        Color(uiColor: .secondarySystemGroupedBackground)
+        #else
+        Color.secondary.opacity(0.08)
+        #endif
+    }
+}
+
+extension View {
+    /// Rounded panel used on the groups screens.
+    func panel(padding: CGFloat = 12) -> some View {
+        self.padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.panel))
+    }
+}
+
+struct SectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text).font(.caption.weight(.semibold)).foregroundColor(.secondary).padding(.horizontal, 4)
+    }
+}
+
+/// Hint text under a section.
+struct Hint: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 4)
+    }
+}
+
+struct GroupBadge: View {
+    var size: CGFloat = 36
+
+    var body: some View {
+        Image(systemName: "person.3.fill")
+            .font(.system(size: size * 0.36, weight: .semibold))
+            .foregroundColor(.white)
+            .frame(width: size, height: size)
+            .background(
+                RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                    .fill(LinearGradient(colors: [Color(red: 0.24, green: 0.55, blue: 1), Color(red: 0.36, green: 0.36, blue: 0.94)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+            )
+    }
+}
+
+/// Big button with an icon and a one-line explanation.
+struct ActionTile: View {
+    let symbol: String
+    let title: String
+    let subtitle: String
+    var selected = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: symbol)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(selected ? .white : .accentColor)
+                Text(title).font(.callout.weight(.semibold))
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundColor(selected ? .white.opacity(0.85) : .secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundColor(selected ? .white : .primary)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 100)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(selected ? Color.accentColor : Color.panel))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.accentColor.opacity(selected ? 0 : 0.35), lineWidth: 1)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// "Active · 2 devices connected", "Active · waiting for devices", or paused.
+struct GroupStatusLabel: View {
     @EnvironmentObject private var engine: SyncEngine
     let group: GroupMembership
-    @State private var showInvite = false
+
+    var body: some View {
+        let status = self.status
+        HStack(spacing: 5) {
+            Circle().fill(status.color).frame(width: 7, height: 7)
+            Text(status.text).font(.caption).foregroundColor(.secondary).lineLimit(1)
+        }
+    }
+
+    private var status: (text: String, color: Color) {
+        switch engine.presence {
+        case .paused: return ("متوقفة — CoShare موقوف على هالجهاز", .indigo)
+        case .quiet: return ("متوقفة — وقت الإيقاف", .indigo)
+        case .online:
+            let count = engine.members(of: group).count
+            if count == 0 { return ("فعّالة · بانتظار أجهزة", .orange) }
+            return ("فعّالة · " + (count == 1 ? "جهاز متصل" : "\(count) أجهزة متصلة"), .green)
+        }
+    }
+}
+
+struct GroupRow: View {
+    let group: GroupMembership
+
+    var body: some View {
+        HStack(spacing: 12) {
+            GroupBadge(size: 36)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(group.name).font(.callout.weight(.semibold)).foregroundColor(.primary).lineLimit(1)
+                GroupStatusLabel(group: group)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.forward").font(.caption.weight(.semibold)).foregroundColor(.secondary)
+        }
+        .padding(.vertical, 9)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Root of "Groups": create / join at the top, then this device's groups.
+struct GroupsHome: View {
+    @EnvironmentObject private var engine: SyncEngine
+    @EnvironmentObject private var settings: AppSettings
+    let open: (GroupsRoute) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if settings.groups.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ابدأ من هون").font(.headline)
+                    Text("هالجهاز مش بأي مجموعة لهلق. أنشئ مجموعة جديدة لأجهزتك، أو انضم لمجموعة موجودة.")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .panel()
+            }
+            HStack(spacing: 10) {
+                ActionTile(symbol: "plus.circle.fill", title: "إنشاء مجموعة", subtitle: "مجموعة جديدة بكلمة سر") { open(.create) }
+                ActionTile(symbol: "person.crop.circle.badge.plus", title: "انضمام لمجموعة", subtitle: "من الشبكة أو برمز QR") {
+                    open(.join)
+                }
+            }
+            if settings.groups.isEmpty && !engine.nearbyGroups.isEmpty {
+                Hint("في \(engine.nearbyGroups.count) مجموعة ظاهرة على هالشبكة — اضغط «انضمام لمجموعة».")
+            }
+            if !settings.groups.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionTitle("مجموعاتي (\(settings.groups.count))")
+                    VStack(spacing: 0) {
+                        ForEach(Array(settings.groups.enumerated()), id: \.element.id) { index, group in
+                            if index > 0 { Divider() }
+                            Button { open(.group(group.id)) } label: { GroupRow(group: group) }
+                                .buttonStyle(.plain)
+                        }
+                    }
+                    .panel(padding: 4)
+                    Hint("اضغط على المجموعة لتشوف أجهزتها، أو لتضيف جهاز جديد برمز QR. الجهاز ممكن يكون بأكتر من مجموعة، وكل نسخ بيوصل لكل مجموعاته.")
+                }
+            }
+        }
+    }
+}
+
+/// One group: its connected devices, a QR code to add another device, and leaving.
+struct GroupDetailView: View {
+    @EnvironmentObject private var engine: SyncEngine
+    @EnvironmentObject private var settings: AppSettings
+    let group: GroupMembership
+    var onLeave: () -> Void
+
+    @State private var showInvite: Bool
     @State private var showPassword = false
     @State private var confirmLeave = false
 
+    init(group: GroupMembership, showInvite: Bool = false, onLeave: @escaping () -> Void) {
+        self.group = group
+        self.onLeave = onLeave
+        _showInvite = State(initialValue: showInvite)
+    }
+
     var body: some View {
         let members = engine.members(of: group)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "person.3.fill").foregroundColor(.accentColor)
-                Text(group.name).font(.headline)
-                Spacer()
-                Text(members.isEmpty ? "لا أجهزة متصلة" : "\(members.count) متصل")
-                    .font(.caption)
-                    .foregroundColor(members.isEmpty ? .orange : .green)
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                GroupBadge(size: 48)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(group.name).font(.title3.weight(.bold)).lineLimit(2)
+                    GroupStatusLabel(group: group)
+                }
+                Spacer(minLength: 0)
             }
-            if !members.isEmpty {
-                Text(members.map(\.name).joined(separator: "، "))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            HStack(spacing: 10) {
-                Button(showInvite ? "إخفاء الدعوة" : "دعوة جهاز") { showInvite.toggle() }
-                Spacer()
-                if confirmLeave {
-                    Button("تأكيد المغادرة") { engine.leave(group) }.foregroundColor(.red)
-                    Button("إلغاء") { confirmLeave = false }
-                } else {
-                    Button("مغادرة") { confirmLeave = true }.foregroundColor(.red)
+
+            VStack(alignment: .leading, spacing: 8) {
+                SectionTitle("الأجهزة المتصلة (\(members.count + 1))")
+                VStack(spacing: 0) {
+                    DeviceRow(symbol: DevicePlatform.current.symbolName, name: settings.deviceName, detail: "هذا الجهاز",
+                              dot: engine.presence.isOnline ? .green : .indigo)
+                    ForEach(members) { peer in
+                        Divider()
+                        DeviceRow(symbol: peer.platform.symbolName, name: peer.name,
+                                  detail: peer.platform.displayName + " · " + (peer.isDirect ? "اتصال مباشر" : "على نفس الشبكة"))
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.panel))
+                if members.isEmpty {
+                    Hint("ما في أجهزة تانية متصلة هلق. تأكد إن CoShare شغّال عليها وإنها على نفس الشبكة، أو أضف جهاز جديد من تحت.")
                 }
             }
-            .buttonStyle(.borderless)
-            .font(.callout)
-            if showInvite {
-                VStack(spacing: 8) {
-                    QRCodeImage(url: engine.inviteURL(for: group)).frame(width: 180, height: 180)
-                    Text("امسح الرمز بكاميرا الهاتف لينضم مباشرة، أو انضم من جهاز آخر بكلمة السر:")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack {
-                        Text(showPassword ? group.password : String(repeating: "•", count: max(6, group.password.count)))
-                            .font(.system(.callout, design: .monospaced))
-                            .textSelection(.enabled)
-                        Button { showPassword.toggle() } label: {
-                            Image(systemName: showPassword ? "eye.slash" : "eye")
+
+            VStack(alignment: .leading, spacing: 8) {
+                SectionTitle("إضافة جهاز جديد")
+                VStack(spacing: 10) {
+                    if showInvite {
+                        QRCodeImage(url: engine.inviteURL(for: group)).frame(width: 190, height: 190)
+                        Text("على الجهاز الجديد: افتح CoShare ← «انضمام لمجموعة» ← «مسح رمز QR» ووجّه الكاميرا على هالرمز. أو امسحه بكاميرا الآيفون مباشرة.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 6) {
+                            Text("كلمة السر:").font(.caption).foregroundColor(.secondary)
+                            Text(showPassword ? group.password : String(repeating: "•", count: max(6, group.password.count)))
+                                .font(.system(.callout, design: .monospaced))
+                                .textSelection(.enabled)
+                            Button { showPassword.toggle() } label: {
+                                Image(systemName: showPassword ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .buttonStyle(.borderless)
+                        Button("إخفاء الرمز") { showInvite = false; showPassword = false }
+                            .buttonStyle(.borderless)
+                            .font(.callout)
+                    } else {
+                        Button { showInvite = true } label: {
+                            Label("إظهار رمز QR لإضافة جهاز", systemImage: "qrcode").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        Text("الجهاز الجديد بيمسح الرمز وبينضم فوراً، بدون ما تكتب كلمة السر.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .frame(maxWidth: .infinity)
+                .panel()
+            }
+
+            VStack(spacing: 10) {
+                if confirmLeave {
+                    Text("بعد المغادرة ما رح يوصلك نسخ أجهزة «\(group.name)»، ولا رح يوصلها نسخك.")
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 10) {
+                        Button(role: .destructive) {
+                            engine.leave(group)
+                            onLeave()
+                        } label: {
+                            Text("مغادرة المجموعة").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        Button { confirmLeave = false } label: { Text("إلغاء").frame(maxWidth: .infinity) }
+                            .buttonStyle(.bordered)
+                    }
+                } else {
+                    Button(role: .destructive) { confirmLeave = true } label: {
+                        Label("مغادرة المجموعة", systemImage: "rectangle.portrait.and.arrow.right")
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// Join: pick a group seen on the network (with its password), or scan an invite QR code.
+struct JoinGroupView: View {
+    enum Method { case nearby, scan }
+
+    @EnvironmentObject private var engine: SyncEngine
+    @State private var method: Method
+    let onJoined: (GroupMembership) -> Void
+    let onCancel: () -> Void
+
+    init(method: Method = .nearby, onJoined: @escaping (GroupMembership) -> Void, onCancel: @escaping () -> Void) {
+        _method = State(initialValue: method)
+        self.onJoined = onJoined
+        self.onCancel = onCancel
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                ActionTile(symbol: "dot.radiowaves.left.and.right", title: "المجموعات القريبة", subtitle: "على نفس الشبكة",
+                           selected: method == .nearby) { method = .nearby }
+                ActionTile(symbol: "qrcode.viewfinder", title: "مسح رمز QR", subtitle: "بالكاميرا، بدون كلمة سر",
+                           selected: method == .scan) { method = .scan }
+            }
+            switch method {
+            case .nearby:
+                nearby
+            case .scan:
+                QRJoinView { joined in
+                    if let joined { onJoined(joined) } else { method = .nearby }
+                }
             }
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.accentColor.opacity(0.08)))
+    }
+
+    @ViewBuilder private var nearby: some View {
+        let groups = engine.nearbyGroups
+        if groups.isEmpty {
+            VStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text("عم ندوّر على مجموعات على نفس الشبكة…").font(.callout)
+                Text("لازم يكون CoShare شغّال على جهاز بالمجموعة، وعلى نفس الواي فاي أو الـ Hotspot. إذا ما ظهرت، استعمل «مسح رمز QR».")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .panel(padding: 18)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionTitle("اختر مجموعة وادخل كلمة سرها")
+                VStack(spacing: 0) {
+                    ForEach(Array(groups.enumerated()), id: \.element.id) { index, nearby in
+                        if index > 0 { Divider() }
+                        NearbyGroupRow(nearby: nearby, onJoined: onJoined)
+                    }
+                }
+                .panel()
+            }
+        }
     }
 }
 
@@ -238,6 +615,7 @@ struct GroupCard: View {
 struct NearbyGroupRow: View {
     @EnvironmentObject private var engine: SyncEngine
     let nearby: NearbyGroup
+    var onJoined: (GroupMembership) -> Void
     @State private var expanded = false
     @State private var password = ""
     @State private var error: String?
@@ -246,15 +624,15 @@ struct NearbyGroupRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Image(systemName: "person.3").foregroundColor(.secondary)
+                GroupBadge(size: 32)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(nearby.group.name).font(.callout.weight(.semibold))
-                    Text("فيها: " + nearby.memberNames.joined(separator: "، ")).font(.caption).foregroundColor(.secondary)
+                    Text("فيها: " + nearby.memberNames.joined(separator: "، ")).font(.caption).foregroundColor(.secondary).lineLimit(2)
                 }
                 Spacer()
                 if !expanded {
                     Button("انضمام") { expanded = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedProminent)
                 }
             }
             if expanded {
@@ -273,6 +651,7 @@ struct NearbyGroupRow: View {
                 }
             }
         }
+        .padding(.vertical, 6)
     }
 
     private func join() {
@@ -281,7 +660,8 @@ struct NearbyGroupRow: View {
         error = nil
         Task {
             do {
-                try await engine.join(nearby, password: password)
+                let group = try await engine.join(nearby, password: password)
+                onJoined(group)
             } catch {
                 self.error = error.localizedDescription
             }
@@ -290,52 +670,61 @@ struct NearbyGroupRow: View {
     }
 }
 
-/// Name + password → a new private group.
-struct CreateGroupForm: View {
+/// Name + password → a new private group, then straight to its QR code.
+struct CreateGroupView: View {
     @EnvironmentObject private var engine: SyncEngine
-    @EnvironmentObject private var settings: AppSettings
+    let onCreated: (GroupMembership) -> Void
     @State private var name = ""
     @State private var password = ""
     @State private var error: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TextField("اسم المجموعة (مثلاً: أجهزة إيهاب)", text: $name)
-                .textFieldStyle(.roundedBorder)
-            SecureField("كلمة السر (\(GroupMembership.minimumPasswordLength) أحرف أو أكثر)", text: $password)
-                .textFieldStyle(.roundedBorder)
-            HStack {
-                Button("إنشاء المجموعة") {
-                    do {
-                        try engine.createGroup(name: name, password: password)
-                        name = ""
-                        password = ""
-                        error = nil
-                    } catch {
-                        self.error = error.localizedDescription
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("اسم المجموعة").font(.caption).foregroundColor(.secondary)
+                    TextField("مثلاً: أجهزة إيهاب", text: $name)
+                        .textFieldStyle(.roundedBorder)
+                }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("كلمة السر").font(.caption).foregroundColor(.secondary)
+                    SecureField("\(GroupMembership.minimumPasswordLength) أحرف أو أكثر", text: $password)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit(create)
+                }
+                Button(action: create) {
+                    Text("إنشاء المجموعة").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
-                Spacer()
+                if let error {
+                    Text(error).font(.caption).foregroundColor(.red)
+                }
             }
-            if let error {
-                Text(error).font(.caption).foregroundColor(.red)
-            }
-            Text("كل جهاز تدخل عليه نفس كلمة السر بيصير من المجموعة، وبيضل فيها حتى بعد إعادة التشغيل أو تغيير الشبكة.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            .panel()
+            Hint("بعد الإنشاء بيطلعلك رمز QR: امسحه من أجهزتك التانية لتنضم. كل جهاز بالمجموعة بيضل فيها حتى بعد إعادة التشغيل أو تغيير الشبكة، وكلمة السر بتشفّر كل شي بينكم.")
+        }
+    }
+
+    private func create() {
+        do {
+            let group = try engine.createGroup(name: name, password: password)
+            error = nil
+            onCreated(group)
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }
 
 struct LogRow: View {
+    @EnvironmentObject private var settings: AppSettings
     let entry: ActivityLog.Entry
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(Format.time(entry.date))
+            Text(Format.time(entry.date, h24: settings.use24Hour))
                 .font(.caption.monospacedDigit())
                 .foregroundColor(.secondary)
             Text(entry.text)
@@ -380,6 +769,7 @@ struct QuietScheduleEditor: View {
                     DatePicker("", selection: time(\.end), displayedComponents: .hourAndMinute).labelsHidden()
                     Spacer(minLength: 0)
                 }
+                .environment(\.locale, Locale(identifier: settings.use24Hour ? "en_GB" : "en_US"))
                 Text("بهالأوقات CoShare بيوقف كلياً على هالجهاز: ما بيقرأ الحافظة، ولا بيبعت ولا بيستقبل، ولا بيظهر على الشبكة. وأجهزتك التانية بتعرف جدوله، فما بتحاول تتصل فيه.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -405,6 +795,7 @@ struct QuietScheduleEditor: View {
 /// "Off the network until …" with the way back.
 struct PresenceBanner: View {
     @EnvironmentObject private var engine: SyncEngine
+    @EnvironmentObject private var settings: AppSettings
 
     var body: some View {
         switch engine.presence {
@@ -413,7 +804,8 @@ struct PresenceBanner: View {
         case .paused:
             banner(symbol: "pause.circle.fill", text: "متوقف — CoShare منفصل تماماً عن الشبكة", button: "استئناف")
         case .quiet(let until):
-            banner(symbol: "moon.zzz.fill", text: "وقت الإيقاف حتى \(Format.clock(until)) — منفصل تماماً عن الشبكة",
+            banner(symbol: "moon.zzz.fill",
+                   text: "وقت الإيقاف حتى \(Format.clock(until, h24: settings.use24Hour)) — منفصل تماماً عن الشبكة",
                    button: "استئناف اليوم")
         }
     }

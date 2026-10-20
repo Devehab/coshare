@@ -5,8 +5,8 @@
 #   echo "copy hello" >> /tmp/coshare-test-commands.txt
 set -euo pipefail
 cd "$(dirname "$0")/.."
-SDK=$(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX[0-9]*.sdk | sort -rV | while read -r s; do
-  echo 'import Foundation' | xcrun swiftc -sdk "$s" -typecheck - >/dev/null 2>&1 && { echo "$s"; break; }; done)
+SDK=$({ xcrun --show-sdk-path --sdk macosx 2>/dev/null; ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX[0-9]*.sdk | sort -rV; } | while read -r s; do
+  echo 'import SwiftUI' | xcrun swiftc -sdk "$s" -typecheck - >/dev/null 2>&1 && { echo "$s"; break; }; done)
 mkdir -p build/tools
 xcrun swiftc -swift-version 5 -target "$(uname -m)-apple-macos14.0" -sdk "$SDK" Shared/*.swift macOS/CameraPreview.swift Tools/TestPeer/main.swift -o build/tools/TestPeer
 : > /tmp/coshare-test-commands.txt

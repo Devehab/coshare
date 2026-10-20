@@ -1,11 +1,30 @@
 import Foundation
 import UniformTypeIdentifiers
 
-/// Last 24 hours of clips (sent and received). Older items are deleted automatically.
+/// How long clips (and their image files) are kept before they are deleted automatically.
+enum HistoryRetention {
+    static let defaultHours = 24
+    static let maximumHours = 7 * 24
+    static let options: [(hours: Int, label: String)] = [
+        (1, "ساعة واحدة"), (12, "١٢ ساعة"), (24, "يوم واحد"), (72, "٣ أيام"), (168, "أسبوع"),
+    ]
+
+    static func label(_ hours: Int) -> String {
+        options.first { $0.hours == hours }?.label ?? "\(hours) ساعة"
+    }
+
+    static func clamp(_ hours: Int) -> Int { min(max(hours, 1), maximumHours) }
+}
+
+/// Recent clips (sent and received). Anything older than the retention period is deleted automatically.
 @MainActor
 final class HistoryStore: ObservableObject {
-    static let retention: TimeInterval = 24 * 60 * 60
-    static let maxItems = 300
+    static let maxItems = 500
+
+    /// Set from AppSettings.historyRetentionHours; changing it purges right away.
+    var retention: TimeInterval = TimeInterval(HistoryRetention.defaultHours * 3600) {
+        didSet { if retention < oldValue { purge() } }
+    }
 
     @Published private(set) var items: [HistoryItem] = []
 
@@ -13,7 +32,8 @@ final class HistoryStore: ObservableObject {
     private let blobsURL: URL
     private var saveScheduled = false
 
-    init(directory: URL) {
+    init(directory: URL, retentionHours: Int = HistoryRetention.defaultHours) {
+        retention = TimeInterval(HistoryRetention.clamp(retentionHours) * 3600)
         indexURL = directory.appendingPathComponent("history.json")
         blobsURL = directory.appendingPathComponent("blobs", isDirectory: true)
         try? FileManager.default.createDirectory(at: blobsURL, withIntermediateDirectories: true)
@@ -78,14 +98,24 @@ final class HistoryStore: ObservableObject {
         scheduleSave()
     }
 
-    /// Drops everything older than 24 hours.
+    /// Drops everything older than the retention period, image files included.
     func purge() {
-        let cutoff = Date().addingTimeInterval(-Self.retention)
+        let cutoff = Date().addingTimeInterval(-retention)
         let expired = items.filter { $0.date < cutoff }
         guard !expired.isEmpty else { return }
         expired.forEach(removeBlob)
         items.removeAll { $0.date < cutoff }
         scheduleSave()
+        removeOrphanBlobs()
+    }
+
+    /// Image files on disk (for checking that nothing is left behind).
+    var blobFileCount: Int { ((try? FileManager.default.contentsOfDirectory(atPath: blobsURL.path)) ?? []).count }
+
+    /// Writes the index now instead of on the next run-loop pass.
+    func saveNow() {
+        Storage.write(items, to: indexURL)
+        Storage.flush()
     }
 
     private func removeBlob(of item: HistoryItem) {
@@ -112,7 +142,7 @@ final class HistoryStore: ObservableObject {
     }
 }
 
-/// Human-readable event log, also limited to the last 24 hours — enough to see that sync is working.
+/// Human-readable event log, kept for the same period as the history — enough to see that sync is working.
 @MainActor
 final class ActivityLog: ObservableObject {
     struct Entry: Codable, Identifiable {
@@ -123,11 +153,15 @@ final class ActivityLog: ObservableObject {
     }
 
     @Published private(set) var entries: [Entry] = []
+    var retention: TimeInterval = TimeInterval(HistoryRetention.defaultHours * 3600) {
+        didSet { if retention < oldValue { purge() } }
+    }
 
     private let url: URL
     private var saveScheduled = false
 
-    init(directory: URL) {
+    init(directory: URL, retentionHours: Int = HistoryRetention.defaultHours) {
+        retention = TimeInterval(HistoryRetention.clamp(retentionHours) * 3600)
         url = directory.appendingPathComponent("activity.json")
         entries = Storage.read([Entry].self, from: url) ?? []
         purge()
@@ -141,7 +175,7 @@ final class ActivityLog: ObservableObject {
     }
 
     func purge() {
-        let cutoff = Date().addingTimeInterval(-HistoryStore.retention)
+        let cutoff = Date().addingTimeInterval(-retention)
         guard entries.contains(where: { $0.date < cutoff }) else { return }
         entries.removeAll { $0.date < cutoff }
         scheduleSave()
@@ -186,6 +220,16 @@ final class AppSettings: ObservableObject {
     }
     /// Start of the quiet window the person chose to skip with "resume today".
     @Published var resumedWindowStart: Date? { didSet { defaults.set(resumedWindowStart, forKey: Keys.resumedWindowStart) } }
+    /// Times as 15:45 instead of 3:45 PM (12-hour is the default).
+    @Published var use24Hour: Bool { didSet { defaults.set(use24Hour, forKey: Keys.use24Hour) } }
+    /// How long history (and copied images) is kept: 1 hour up to a week, a day by default.
+    @Published var historyRetentionHours: Int {
+        didSet {
+            let clamped = HistoryRetention.clamp(historyRetentionHours)
+            if clamped != historyRetentionHours { historyRetentionHours = clamped; return }
+            defaults.set(historyRetentionHours, forKey: Keys.historyRetentionHours)
+        }
+    }
 
     let defaults: UserDefaults
 
@@ -201,11 +245,14 @@ final class AppSettings: ObservableObject {
         static let showInDock = "showInDock"
         static let quietSchedule = "quietSchedule"
         static let resumedWindowStart = "resumedWindowStart"
+        static let use24Hour = "use24Hour"
+        static let historyRetentionHours = "historyRetentionHours"
     }
 
     init(defaults: UserDefaults, defaultName: String) {
         self.defaults = defaults
-        defaults.register(defaults: [Keys.syncImages: true, Keys.keepAlive: true, Keys.skipConcealed: true, Keys.showInDock: true])
+        defaults.register(defaults: [Keys.syncImages: true, Keys.keepAlive: true, Keys.skipConcealed: true, Keys.showInDock: true,
+                                      Keys.historyRetentionHours: HistoryRetention.defaultHours])
         if let id = defaults.string(forKey: Keys.deviceID) {
             deviceID = id
         } else {
@@ -226,5 +273,7 @@ final class AppSettings: ObservableObject {
         _quietSchedule = Published(initialValue: defaults.data(forKey: Keys.quietSchedule)
             .flatMap { try? JSONDecoder().decode(QuietSchedule.self, from: $0) } ?? .default)
         _resumedWindowStart = Published(initialValue: defaults.object(forKey: Keys.resumedWindowStart) as? Date)
+        _use24Hour = Published(initialValue: defaults.bool(forKey: Keys.use24Hour))
+        _historyRetentionHours = Published(initialValue: HistoryRetention.clamp(defaults.integer(forKey: Keys.historyRetentionHours)))
     }
 }

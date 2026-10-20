@@ -11,9 +11,13 @@ struct ContentView: View {
     @State private var showLog = false
     @State private var copiedID: UUID?
     @State private var busy = false
-    @State private var showGroups = false
-    @State private var showScanner = false
+    @State private var groupsSheet: GroupsSheet?
     @State private var pendingInvite: GroupMembership?
+
+    struct GroupsSheet: Identifiable {
+        let id = UUID()
+        let start: GroupsRoute?
+    }
 
     var body: some View {
         NavigationStack {
@@ -45,18 +49,22 @@ struct ContentView: View {
 
                 Section {
                     if settings.groups.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("هالجهاز مش بأي مجموعة لهلق").font(.headline)
-                            Text("أنشئ مجموعة جديدة بكلمة سر، أو انضم لمجموعة موجودة على نفس الشبكة.")
+                            Text("أنشئ مجموعة لأجهزتك، أو انضم لمجموعة موجودة على نفس الشبكة أو برمز QR.")
                                 .font(.callout)
                                 .foregroundColor(.secondary)
-                            HStack {
-                                Button("إعداد المجموعات") { showGroups = true }
-                                    .buttonStyle(.borderedProminent)
+                            HStack(spacing: 10) {
                                 Button {
-                                    showScanner = true
+                                    groupsSheet = GroupsSheet(start: .create)
                                 } label: {
-                                    Label("انضمام بـ QR", systemImage: "qrcode.viewfinder")
+                                    Label("إنشاء مجموعة", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                Button {
+                                    groupsSheet = GroupsSheet(start: .join)
+                                } label: {
+                                    Label("انضمام", systemImage: "person.crop.circle.badge.plus").frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
                             }
@@ -64,19 +72,25 @@ struct ContentView: View {
                         .padding(.vertical, 4)
                     } else {
                         ForEach(engine.connectedPeers) { peer in
-                            PeerRow(peer: peer, detail: peer.isDirect ? "اتصال مباشر" : "على نفس الشبكة")
+                            PeerRow(peer: peer, detail: peer.platform.displayName + " · " + (peer.isDirect ? "اتصال مباشر" : "على نفس الشبكة"))
                         }
                         Button {
-                            showGroups = true
+                            groupsSheet = GroupsSheet(start: nil)
                         } label: {
-                            Label("المجموعات (\(settings.groups.map(\.name).joined(separator: "، ")))", systemImage: "person.3")
+                            HStack {
+                                Label("المجموعات", systemImage: "person.3")
+                                Spacer()
+                                Text(settings.groups.map(\.name).joined(separator: "، "))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
                         }
                     }
                 } header: {
                     Text("أجهزتي")
                 } footer: {
                     if !engine.nearbyGroups.isEmpty && settings.groups.isEmpty {
-                        Text("في \(engine.nearbyGroups.count) مجموعة على نفس الشبكة — افتح «إعداد المجموعات» لتنضم.")
+                        Text("في \(engine.nearbyGroups.count) مجموعة على نفس الشبكة — اضغط «انضمام».")
                     }
                 }
 
@@ -103,9 +117,12 @@ struct ContentView: View {
                         }
                     }
                 } header: {
-                    Text("آخر ٢٤ ساعة")
+                    Text("الحافظة")
                 } footer: {
-                    Text("اضغط على أي عنصر لنسخه من جديد. الأقدم من يوم يُحذف تلقائياً.")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("اضغط على أي عنصر لنسخه من جديد.")
+                        RetentionNote()
+                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -128,15 +145,12 @@ struct ContentView: View {
                     .environmentObject(keeper)
             }
             .sheet(isPresented: $showLog) {
-                LogView().environmentObject(log)
+                LogView().environmentObject(log).environmentObject(settings)
             }
-            .sheet(isPresented: $showGroups) {
-                GroupsView()
+            .sheet(item: $groupsSheet) { sheet in
+                GroupsView(start: sheet.start)
                     .environmentObject(engine)
                     .environmentObject(settings)
-            }
-            .sheet(isPresented: $showScanner) {
-                QRJoinSheet().environmentObject(engine)
             }
             .alert("الانضمام لمجموعة «\(pendingInvite?.name ?? "")»؟",
                    isPresented: Binding(get: { pendingInvite != nil }, set: { if !$0 { pendingInvite = nil } }),
@@ -176,7 +190,7 @@ struct ContentView: View {
     private var statusTitle: String {
         switch engine.presence {
         case .paused: return "متوقف — منفصل عن الشبكة"
-        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until))"
+        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until, h24: settings.use24Hour))"
         case .online: break
         }
         let count = engine.connectedPeers.count
@@ -234,6 +248,15 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    RetentionPicker()
+                    TimeFormatPicker()
+                } header: {
+                    Text("السجل والوقت")
+                } footer: {
+                    Text("الحافظة والسجل، مع الصور ولقطات الشاشة المنسوخة، بينحذفوا تلقائياً بعد هالمدة (الحد الأقصى أسبوع).")
+                }
+
+                Section {
                     Toggle("العمل الدائم بالخلفية", isOn: $settings.keepAlive)
                         .onValueChange(of: settings.keepAlive) { _ in keeper.applySetting() }
                     Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)
@@ -282,69 +305,60 @@ struct SettingsView: View {
     }
 }
 
-struct QRJoinSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            QRJoinView { dismiss() }
-                .padding(20)
-                .navigationTitle("انضمام بمسح QR")
-                .navigationBarTitleDisplayMode(.inline)
-        }
-        .environment(\.layoutDirection, .rightToLeft)
-    }
-}
-
 struct GroupsView: View {
     @EnvironmentObject private var engine: SyncEngine
     @EnvironmentObject private var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
-    @State private var showScanner = false
+    @State private var path: [GroupsRoute]
+    /// A group just created: its page opens with the QR code showing.
+    @State private var newGroupID: String?
+
+    init(start: GroupsRoute? = nil) {
+        _path = State(initialValue: start.map { [$0] } ?? [])
+    }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Button {
-                        showScanner = true
-                    } label: {
-                        Label("انضمام بمسح رمز QR", systemImage: "qrcode.viewfinder")
-                    }
-                } footer: {
-                    Text("على جهاز بالمجموعة افتح المجموعة واضغط «دعوة جهاز»، وامسح الرمز اللي بيطلع.")
+        NavigationStack(path: $path) {
+            screen { GroupsHome { path.append($0) } }
+                .navigationTitle("المجموعات")
+                .navigationDestination(for: GroupsRoute.self) { route in
+                    screen { destination(route) }
+                        .navigationTitle(title(for: route))
                 }
-                if !settings.groups.isEmpty {
-                    Section("مجموعاتي") {
-                        ForEach(settings.groups) { GroupCard(group: $0).listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)) }
-                    }
-                }
-                Section {
-                    if engine.nearbyGroups.isEmpty {
-                        Text("ما في مجموعات تانية ظاهرة على هالشبكة لهلق.").foregroundColor(.secondary)
-                    }
-                    ForEach(engine.nearbyGroups) { NearbyGroupRow(nearby: $0) }
-                } header: {
-                    Text("مجموعات على نفس الشبكة")
-                } footer: {
-                    Text("انضم بكلمة سر المجموعة، أو امسح رمز الدعوة (QR) من جهاز بالمجموعة بكاميرا الآيفون.")
-                }
-                Section(settings.groups.isEmpty ? "إنشاء مجموعة" : "إنشاء مجموعة أخرى") {
-                    CreateGroupForm()
-                }
-            }
-            .navigationTitle("المجموعات")
+        }
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    private func screen<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ScrollView { content().padding(16) }
+            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showScanner) {
-                QRJoinSheet().environmentObject(engine)
-            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("تم") { dismiss() }
                 }
             }
+    }
+
+    private func title(for route: GroupsRoute) -> String {
+        if case .group(let id) = route, let group = settings.groups.first(where: { $0.id == id }) { return group.name }
+        return route.title
+    }
+
+    @ViewBuilder private func destination(_ route: GroupsRoute) -> some View {
+        switch route {
+        case .create:
+            CreateGroupView { group in
+                newGroupID = group.id
+                path = [.group(group.id)]
+            }
+        case .join:
+            JoinGroupView(onJoined: { path = [.group($0.id)] }, onCancel: { path.removeAll() })
+        case .group(let id):
+            if let group = settings.groups.first(where: { $0.id == id }) {
+                GroupDetailView(group: group, showInvite: newGroupID == id) { path.removeAll() }
+            }
         }
-        .environment(\.layoutDirection, .rightToLeft)
     }
 }
 
@@ -361,7 +375,7 @@ struct LogView: View {
                 ForEach(log.entries) { LogRow(entry: $0) }
             }
             .listStyle(.plain)
-            .navigationTitle("سجل آخر ٢٤ ساعة")
+            .navigationTitle("سجل النشاط")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

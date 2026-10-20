@@ -511,15 +511,23 @@
             <span class="badge" data-i18n="dl.rec">لجهازك</span>
             <div class="os-icon"><svg style="color:#38d6ff"><use href="#i-windows"/></svg></div>
             <h3>Windows</h3>
-            <div class="req" data-i18n="dl.win.req">Windows 10 و 11 · ‎64-bit</div>
-            <a class="btn btn-primary btn-sm" href="downloads/CoShare-windows.exe" data-platform="windows"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
+            <div class="req" data-i18n="dl.win.req">Windows 10 و 11 · Intel و AMD و ARM</div>
+            <a class="btn btn-primary btn-sm" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-Setup-x64.exe" data-platform="windows" id="winDownload"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
+            <div class="dl-alt"><a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-Setup-arm64.exe" data-i18n="dl.win.arm">نسخة أجهزة ARM (Snapdragon)</a></div>
           </div>
           <div class="card dl-card reveal" data-os="linux">
             <span class="badge" data-i18n="dl.rec">لجهازك</span>
             <div class="os-icon"><svg style="color:#ffcf5c"><use href="#i-linux"/></svg></div>
             <h3>Linux</h3>
-            <div class="req" data-i18n="dl.linux.req">Ubuntu و Debian و Fedora · ‎AppImage و ‎.deb</div>
-            <a class="btn btn-primary btn-sm" href="downloads/CoShare-linux.AppImage" data-platform="linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
+            <div class="req" data-i18n="dl.linux.req">Ubuntu و Debian و Mint و Fedora وكل التوزيعات</div>
+            <a class="btn btn-primary btn-sm" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-amd64.deb" data-platform="linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.linux.btn">تحميل ‎.deb (Ubuntu و Debian)</span></a>
+            <div class="dl-alt">
+              <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.rpm" data-i18n="dl.linux.rpm">‎.rpm (Fedora)</a>
+              <span>·</span>
+              <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.AppImage" data-i18n="dl.linux.appimage">AppImage (أي توزيعة)</a>
+              <span>·</span>
+              <a href="https://github.com/Devehab/coshare/releases/latest" data-i18n="dl.linux.arm">ARM</a>
+            </div>
           </div>
         </div>
         <p class="dl-note reveal" data-i18n="dl.note">الإصدار 1.0 · مجاني · بدون حساب · بدون إعلانات</p>

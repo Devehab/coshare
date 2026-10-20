@@ -1,0 +1,73 @@
+# Packages for Windows and Linux. Asset names are fixed (no version) so the landing page can link to
+# https://github.com/Devehab/coshare/releases/latest/download/<name>.
+appId: com.ehabk.coshare
+productName: CoShare
+copyright: CoShare
+directories:
+  output: dist
+  buildResources: build
+files:
+  - src/**
+  - package.json
+  - "!**/*.map"
+asarUnpack:
+  - node_modules/koffi/**
+  - node_modules/@koromix/**
+electronLanguages: [en-US, ar]
+extraMetadata:
+  main: src/main/main.js
+
+win:
+  icon: build/icon.png
+  # One installer per architecture (the build passes --x64 or --arm64).
+  target: [nsis]
+  artifactName: CoShare-Setup-${arch}.${ext}
+nsis:
+  oneClick: true
+  perMachine: false
+  runAfterFinish: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CoShare
+  deleteAppDataOnUninstall: false
+
+linux:
+  icon: build/icon.png
+  category: Utility
+  executableName: coshare
+  synopsis: One clipboard for all your devices
+  description: Copy on one device, paste on another — iPhone, Mac, Windows and Linux, any account, local network only, end-to-end encrypted.
+  maintainer: CoShare <coshare@users.noreply.github.com>
+  vendor: CoShare
+  desktop:
+    entry:
+      Name: CoShare
+      Comment: One clipboard for all your devices
+      Keywords: clipboard;copy;paste;sync;
+      StartupWMClass: CoShare
+  # x64 → CoShare-amd64.deb, CoShare-x86_64.rpm, CoShare-x86_64.AppImage
+  # arm64 → CoShare-arm64.deb, CoShare-aarch64.rpm, CoShare-arm64.AppImage
+  target: [deb, rpm, AppImage]
+  artifactName: CoShare-${arch}.${ext}
+deb:
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+    - libx11-6
+    - libxfixes3
+    - libgbm1
+    - libasound2
+  recommends:
+    - libayatana-appindicator3-1
+rpm:
+  depends:
+    - libXfixes
+    - libX11
+publish: null

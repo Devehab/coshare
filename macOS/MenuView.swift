@@ -8,10 +8,17 @@ struct MenuView: View {
 
     @State private var tab: Tab
     @State private var copiedID: UUID?
-    @State private var scanningQR = false
+    @State private var groupsRoute: GroupsRoute?
+    /// A group just created: its page opens with the QR code showing.
+    @State private var newGroupID: String?
 
-    init(tab: Tab = .history) {
+    private let height: CGFloat
+
+    init(tab: Tab = .history, route: GroupsRoute? = nil, inviteFor: String? = nil, height: CGFloat = 540) {
         _tab = State(initialValue: tab)
+        _groupsRoute = State(initialValue: route)
+        _newGroupID = State(initialValue: inviteFor)
+        self.height = height
     }
 
     enum Tab: String, CaseIterable {
@@ -52,7 +59,7 @@ struct MenuView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
         }
-        .frame(width: 380, height: 540)
+        .frame(width: 380, height: height)
         .environment(\.layoutDirection, .rightToLeft)
     }
 
@@ -85,7 +92,7 @@ struct MenuView: View {
     private var statusText: String {
         switch engine.presence {
         case .paused: return "متوقف — منفصل عن الشبكة"
-        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until))"
+        case .quiet(let until): return "وقت الإيقاف حتى \(Format.clock(until, h24: settings.use24Hour))"
         case .online: break
         }
         let count = engine.connectedPeers.count
@@ -134,7 +141,7 @@ struct MenuView: View {
                         }
                         Divider().padding(.horizontal, 14)
                     }
-                    Text("يُحفظ آخر ٢٤ ساعة فقط ويُحذف الأقدم تلقائياً")
+                    RetentionNote()
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(10)
@@ -146,58 +153,39 @@ struct MenuView: View {
     @ViewBuilder private var devicesTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if settings.groups.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("ابدأ من هون").font(.headline)
-                        Text("هالجهاز مش بأي مجموعة لهلق. أنشئ مجموعة جديدة وحط إلها كلمة سر، أو انضم لمجموعة موجودة على نفس الشبكة.")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                if let route = groupsRoute {
+                    Button { groupsRoute = nil } label: {
+                        Label("المجموعات", systemImage: "chevron.backward").font(.callout)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange.opacity(0.12)))
-                }
-                if scanningQR {
-                    sectionTitle("انضمام بمسح رمز QR")
-                    QRJoinView { scanningQR = false }
+                    .buttonStyle(.borderless)
+                    groupsScreen(route)
                 } else {
-                    Button {
-                        scanningQR = true
-                    } label: {
-                        Label("انضمام بمسح رمز QR بالكاميرا", systemImage: "qrcode.viewfinder")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                    GroupsHome { groupsRoute = $0 }
                 }
-                if !settings.groups.isEmpty {
-                    sectionTitle("مجموعاتي")
-                    ForEach(settings.groups) { GroupCard(group: $0) }
-                }
-                if !engine.nearbyGroups.isEmpty {
-                    sectionTitle("مجموعات على نفس الشبكة")
-                    ForEach(engine.nearbyGroups) { NearbyGroupRow(nearby: $0) }
-                }
-                sectionTitle(settings.groups.isEmpty ? "إنشاء مجموعة" : "إنشاء مجموعة أخرى")
-                CreateGroupForm()
-                if !engine.connectedPeers.isEmpty {
-                    Divider()
-                    sectionTitle("الأجهزة المتصلة (\(engine.connectedPeers.count))")
-                    ForEach(engine.connectedPeers) { peer in
-                        PeerRow(peer: peer, detail: peer.isDirect ? "اتصال مباشر" : "على نفس الشبكة")
-                    }
-                }
-                Text("الجهاز ممكن يكون بأكتر من مجموعة، وكل نسخ بيوصل لكل مجموعاته.")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
             }
             .padding(14)
         }
+        .id(groupsRoute)
     }
 
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text).font(.caption.weight(.semibold)).foregroundColor(.secondary)
+    @ViewBuilder private func groupsScreen(_ route: GroupsRoute) -> some View {
+        switch route {
+        case .create:
+            Text("إنشاء مجموعة").font(.title3.weight(.bold))
+            CreateGroupView { group in
+                newGroupID = group.id
+                groupsRoute = .group(group.id)
+            }
+        case .join:
+            Text("انضمام لمجموعة").font(.title3.weight(.bold))
+            JoinGroupView(onJoined: { groupsRoute = .group($0.id) }, onCancel: { groupsRoute = nil })
+        case .group(let id):
+            if let group = settings.groups.first(where: { $0.id == id }) {
+                GroupDetailView(group: group, showInvite: newGroupID == id) { groupsRoute = nil }
+            } else {
+                Color.clear.onAppear { groupsRoute = nil }
+            }
+        }
     }
 
     @ViewBuilder private var logTab: some View {
@@ -250,6 +238,15 @@ private struct MacSettingsView: View {
                 }
                 Divider()
                 QuietScheduleEditor()
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    RetentionPicker().pickerStyle(.menu)
+                    Text("الحافظة والسجل، مع الصور ولقطات الشاشة المنسوخة، بينحذفوا تلقائياً بعد هالمدة (الحد الأقصى أسبوع).")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    TimeFormatPicker().pickerStyle(.menu)
+                }
                 Divider()
                 Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)
                 Toggle("تجاهل كلمات السر المنسوخة من مدير كلمات السر", isOn: $settings.skipConcealed)

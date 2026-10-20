@@ -1,0 +1,140 @@
+# Builds CoShare for Windows and Linux on native x64 and arm64 machines, self-tests every build,
+# installs the Linux packages on clean Ubuntu, Debian and Fedora, and (for a desktop-v* tag)
+# publishes a release whose file names never change, so the landing page can link to
+# https://github.com/Devehab/coshare/releases/latest/download/<file>.
+name: Desktop apps
+
+on:
+  push:
+    tags: ["desktop-v*"]
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, platform: win, arch: x64, unpacked: win-unpacked }
+          - { os: windows-11-arm, platform: win, arch: arm64, unpacked: win-arm64-unpacked }
+          - { os: ubuntu-22.04, platform: linux, arch: x64, unpacked: linux-unpacked, deb: amd64, rpm: x86_64, appimage: x86_64 }
+          - { os: ubuntu-24.04-arm, platform: linux, arch: arm64, unpacked: linux-arm64-unpacked, deb: arm64, rpm: aarch64, appimage: arm64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci
+          node node_modules/electron/install.js
+          npm run natives
+
+      - name: Unit and interop tests
+        run: npm test
+
+      - name: Linux build tools
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rpm xvfb xauth >/dev/null
+
+      - name: Build packages
+        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+
+      - name: Self-test the packaged app (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: |
+          $env:COSHARE_SELF_TEST_OUT = "$env:RUNNER_TEMP\self-test.json"
+          $p = Start-Process -FilePath "dist\${{ matrix.unpacked }}\CoShare.exe" -ArgumentList "--self-test" -Wait -PassThru
+          Get-Content $env:COSHARE_SELF_TEST_OUT
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Install with the setup program and self-test (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\CoShare-Setup-${{ matrix.arch }}.exe" -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { exit 1 }
+          $exe = "$env:LOCALAPPDATA\Programs\CoShare\CoShare.exe"
+          if (-not (Test-Path $exe)) { Write-Error "not installed at $exe"; exit 1 }
+          Get-Process CoShare -ErrorAction SilentlyContinue | Stop-Process -Force
+          $env:COSHARE_SELF_TEST_OUT = "$env:RUNNER_TEMP\installed.json"
+          $p = Start-Process -FilePath $exe -ArgumentList "--self-test" -Wait -PassThru
+          Get-Content $env:COSHARE_SELF_TEST_OUT
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Self-test the packaged app (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          COSHARE_SELF_TEST_OUT=/tmp/self-test.json xvfb-run -a dist/${{ matrix.unpacked }}/coshare --self-test --no-sandbox --disable-gpu || true
+          cat /tmp/self-test.json && echo
+          grep -q '"ok":true' /tmp/self-test.json
+
+      - name: Install on clean distributions and self-test (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          run() { echo "::group::$1 ← $2"; docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/s:ro" "$1" bash /s/install-test.sh "/dist/$2"; echo "::endgroup::"; }
+          run ubuntu:22.04 CoShare-${{ matrix.deb }}.deb
+          run ubuntu:24.04 CoShare-${{ matrix.deb }}.deb
+          run debian:12 CoShare-${{ matrix.deb }}.deb
+          run fedora:41 CoShare-${{ matrix.rpm }}.rpm
+          run ubuntu:22.04 CoShare-${{ matrix.appimage }}.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coshare-${{ matrix.platform }}-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            desktop/dist/CoShare-Setup-*.exe
+            desktop/dist/CoShare-*.deb
+            desktop/dist/CoShare-*.rpm
+            desktop/dist/CoShare-*.AppImage
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Add the Mac app
+        run: cp website/downloads/CoShare-mac.zip out/ && ls -la out
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: CoShare ${{ github.ref_name }}
+          make_latest: true
+          files: out/*
+          body: |
+            **CoShare — one clipboard for all your devices.** Local network only, end-to-end encrypted, any account.
+
+            | System | File |
+            |---|---|
+            | Windows 10/11 (Intel/AMD) | `CoShare-Setup-x64.exe` |
+            | Windows 11 on ARM | `CoShare-Setup-arm64.exe` |
+            | Ubuntu, Debian, Mint, Pop!_OS, elementary | `CoShare-amd64.deb` (ARM: `CoShare-arm64.deb`) |
+            | Fedora, RHEL, openSUSE | `CoShare-x86_64.rpm` (ARM: `CoShare-aarch64.rpm`) |
+            | Any Linux (Arch, Manjaro, …) | `CoShare-x86_64.AppImage` (ARM: `CoShare-arm64.AppImage`) |
+            | macOS 13+ | `CoShare-mac.zip` |
+
+            Windows asks once to allow CoShare on the network: choose **Private networks**.
+            On Ubuntu 22.04+ the AppImage needs `sudo apt install libfuse2`; the .deb doesn't.

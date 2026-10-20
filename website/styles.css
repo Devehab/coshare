@@ -303,6 +303,9 @@ table.compare { width: 100%; border-collapse: collapse; min-width: 680px; }
 .dl-card h3 { margin: 6px 0 0; font-size: 19px; }
 .dl-card .req { color: var(--dim); font-size: 13.5px; min-height: 42px; }
 .dl-card .btn { width: 100%; margin-top: 10px; }
+.dl-alt { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; margin-top: 8px; font-size: 13px; color: var(--dim); }
+.dl-alt a { color: var(--dim); text-decoration: underline; text-underline-offset: 3px; }
+.dl-alt a:hover { color: var(--text, #fff); }
 .dl-note { text-align: center; color: var(--dim); font-size: 14px; margin-top: 22px; }
 
 /* ---------- FAQ ---------- */

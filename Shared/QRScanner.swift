@@ -107,7 +107,8 @@ final class QRScanner: NSObject, ObservableObject, AVCaptureVideoDataOutputSampl
 struct QRJoinView: View {
     @EnvironmentObject private var engine: SyncEngine
     @StateObject private var scanner = QRScanner()
-    var onDone: () -> Void
+    /// Called with the joined group, or nil when cancelled.
+    var onDone: (GroupMembership?) -> Void
 
     @State private var message: String?
     @State private var joinedName: String?
@@ -137,17 +138,19 @@ struct QRJoinView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             Text(joinedName != nil ? "كل نسخ صار يوصل لأجهزة هالمجموعة." :
-                    message ?? "وجّه الكاميرا على رمز الدعوة: من جهاز بالمجموعة افتح المجموعة واضغط «دعوة جهاز».")
+                    message ?? "وجّه الكاميرا على رمز الدعوة: من جهاز بالمجموعة افتح المجموعة واضغط «إظهار رمز QR لإضافة جهاز».")
                 .font(.callout)
                 .foregroundColor(message == nil || joinedName != nil ? .secondary : .red)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button(joinedName == nil ? "إلغاء" : "تم") {
-                scanner.stop()
-                onDone()
+            if joinedName == nil {
+                Button("إلغاء") {
+                    scanner.stop()
+                    onDone(nil)
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
         }
         .onAppear { scanner.start(onCode: handle) }
         .onDisappear { scanner.stop() }
@@ -172,6 +175,6 @@ struct QRJoinView: View {
         joinedName = invite.name
         message = nil
         scanner.stop()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { onDone() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { onDone(invite) }
     }
 }

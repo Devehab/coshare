@@ -10,6 +10,7 @@
 //   groups | nearby | peers | history   print state
 //   qrtest                      encode an invite as QR, decode it with Vision, check it round-trips
 //   quietnow <minutes>          quiet hours starting now, every day · quietoff · resume · state
+//   retentiontest               checks that old clips and their image files are deleted on time
 // COSHARE_NO_BONJOUR=1 disables Bonjour (direct mode), COSHARE_PORT=<n> sets the listening port,
 // COSHARE_HOSTS=host:port,… are extra addresses to greet (like a hotspot gateway).
 //   quit
@@ -126,6 +127,8 @@ final class CommandReader {
                 let ok = decoded?.id == invite.id && decoded?.name == invite.name && decoded?.password == invite.password
                 say("QRTEST \(image.width)px decoded=\(payload != nil) roundtrip=\(ok)")
             }
+        case "retentiontest":
+            retentionTest()
         case "quietnow":
             let calendar = Calendar.current
             let now = calendar.dateComponents([.hour, .minute], from: Date())
@@ -170,3 +173,62 @@ Task { @MainActor in
     say("READY name=\(engine.settings.deviceName) commands=\(commandsPath)")
 }
 RunLoop.main.run()
+
+
+/// Old clips — and the image files behind them — must disappear when they pass the retention period,
+/// a longer period must keep them, and the setting must survive a restart.
+@MainActor
+func retentionTest() {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("coshare-retention-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: dir) }
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let png = Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) + Data(repeating: 7, count: 2000)
+    var results: [(String, Bool)] = []
+    func add(_ store: HistoryStore, _ content: ClipContent, hoursAgo: Double) {
+        store.add(content, hash: content.hash, deviceName: "T", direction: .received, date: Date().addingTimeInterval(-hoursAgo * 3600))
+    }
+
+    // A week: items from 2 and 50 hours ago stay.
+    let store = HistoryStore(directory: dir, retentionHours: 168)
+    add(store, .text("now"), hoursAgo: 0)
+    add(store, .text("two hours"), hoursAgo: 2)
+    add(store, .image(png, uti: "public.png"), hoursAgo: 2.5)
+    add(store, .image(png + Data([1]), uti: "public.png"), hoursAgo: 50)
+    store.purge()
+    results.append(("week keeps all 4 items", store.items.count == 4))
+    results.append(("week keeps both image files", store.blobFileCount == 2))
+    store.saveNow()
+
+    // Reopening with a week must not drop the 50-hour item (the setting applies before the first purge).
+    let reopened = HistoryStore(directory: dir, retentionHours: 168)
+    results.append(("restart with a week keeps 4", reopened.items.count == 4))
+
+    // One day: the 50-hour item and its image go.
+    reopened.retention = 24 * 3600
+    results.append(("one day drops the 50h item", reopened.items.count == 3))
+    results.append(("one day removes its image file", reopened.blobFileCount == 1))
+
+    // One hour: only "now" is left, and no image files remain.
+    reopened.retention = 3600
+    results.append(("one hour keeps only the newest", reopened.items.map(\.text) == ["now"]))
+    results.append(("one hour leaves no image files", reopened.blobFileCount == 0))
+
+    // The setting itself: clamped to 1 hour … 1 week, default one day.
+    let defaults = UserDefaults(suiteName: "coshare.retentiontest.\(UUID().uuidString)")!
+    let settings = AppSettings(defaults: defaults, defaultName: "T")
+    results.append(("default is one day", settings.historyRetentionHours == 24))
+    results.append(("default is 12-hour clock", settings.use24Hour == false))
+    settings.historyRetentionHours = 1000
+    results.append(("capped at a week", settings.historyRetentionHours == 168))
+    settings.historyRetentionHours = 72
+    results.append(("saved across restart", AppSettings(defaults: defaults, defaultName: "T").historyRetentionHours == 72))
+
+    // Clock format.
+    let date = Calendar.current.date(bySettingHour: 15, minute: 45, second: 12, of: Date())!
+    results.append(("12h clock", Format.clock(date, h24: false).contains("3:45 PM")))
+    results.append(("24h clock", Format.clock(date, h24: true).contains("15:45")))
+    results.append(("12h log time", Format.time(date, h24: false).contains("3:45:12 PM")))
+
+    for (name, ok) in results { say("RETENTION \(ok ? "PASS" : "FAIL") \(name)") }
+    say("RETENTION \(results.allSatisfy(\.1) ? "ALL PASS" : "FAILED")")
+}
