@@ -67,7 +67,7 @@ scripts/build-mac.sh --install
 أجهزة ARM على لينكس: `CoShare-arm64.deb` و `CoShare-aarch64.rpm` و `CoShare-arm64.AppImage`.
 
 - **ويندوز:** أول مرة بيسألك جدار الحماية: اختار **الشبكات الخاصة (Private)**. الملف مش موقّع، فإذا طلعت «Windows protected your PC» اضغط **More info ← Run anyway**.
-- **لينكس:** الـ AppImage على Ubuntu 22.04 وأحدث بيحتاج `sudo apt install libfuse2` (الـ .deb ما بيحتاجه). على GNOME، أيقونة شريط المهام بتحتاج إضافة AppIndicator (موجودة افتراضياً بـ Ubuntu). على Wayland بيشتغل عن طريق XWayland.
+- **لينكس:** الـ AppImage ما بيحتاج أي مكتبات إضافية (ولا حتى libfuse2). على GNOME، أيقونة شريط المهام بتحتاج إضافة AppIndicator (موجودة افتراضياً بـ Ubuntu). على Wayland بيشتغل عن طريق XWayland.
 - بيشتغل لحاله مع بدء الجهاز، والنافذة بتتسكّر للخلفية. لتفتحه: من أيقونته، أو شغّله مرة تانية من قائمة البرامج.
 - كل إصدار بيتبنى على GitHub Actions على أجهزة x64 و ARM حقيقية، وبيتجرّب تلقائياً (التشفير مع تطبيقات أبل، والحافظة نص وصور، والشبكة)، وبتتثبّت الحزم على Ubuntu 22.04 و 24.04 و Debian 12 و Fedora 41 قبل النشر.
 

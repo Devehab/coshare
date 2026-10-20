@@ -81,7 +81,11 @@ jobs:
             if (-not $exe) { Start-Sleep -Seconds 2 }
           }
           if (-not $exe) {
-            Get-ChildItem "$env:LOCALAPPDATA\Programs" -ErrorAction SilentlyContinue
+            "OS architecture: " + [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+            "Installer: " + (Get-Item "dist\CoShare-Setup-${{ matrix.arch }}.exe").Length + " bytes"
+            Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+              Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 300
+            Get-MpThreatDetection -ErrorAction SilentlyContinue | Select-Object -First 5 | Format-List | Out-String -Width 300
             Write-Error "CoShare.exe not found after installing"; exit 1
           }
           Write-Output "installed at $exe"
@@ -155,4 +159,4 @@ jobs:
             | macOS 13+ | `CoShare-mac.zip` |
 
             Windows asks once to allow CoShare on the network: choose **Private networks**.
-            On Ubuntu 22.04+ the AppImage needs `sudo apt install libfuse2`; the .deb doesn't.
+            The AppImage runs on any distribution: `chmod +x CoShare-*.AppImage` and open it.
