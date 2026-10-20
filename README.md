@@ -10,7 +10,7 @@
 - **بيتجاهل كلمات السر** اللي بتنسخها من 1Password وأمثاله.
 - **سجل بتختار مدته** للنسخ والأحداث: من ساعة لأسبوع (افتراضياً يوم واحد). الأقدم بينحذف تلقائياً، مع الصور ولقطات الشاشة المنسوخة.
 - **الوقت بصيغة ١٢ ساعة (AM/PM)** افتراضياً، أو ٢٤ ساعة من الإعدادات.
-- **يدعم:** macOS 13 Ventura وأحدث (Intel و Apple Silicon)، و iOS/iPadOS 16 وأحدث، و Windows 10/11 (x64 و ARM)، و Linux (Ubuntu و Debian و Mint و Fedora وأي توزيعة بالـ AppImage).
+- **يدعم أنظمة آخر ٥ سنين وأحدث:** macOS 12 Monterey (Intel و Apple Silicon)، و iOS/iPadOS 15، و Windows 10/11 (x64 و ARM)، و Linux (Ubuntu 20.04 و Debian 11 و Fedora و RHEL 9 وما بعدها، وأي توزيعة بالـ AppImage). على macOS 12 بيشتغل نفس التطبيق بواجهة AppKit لأنه MenuBarExtra بيحتاج macOS 13، وعلى iOS 15 بيشتغل كله ما عدا إجراءات تطبيق الاختصارات (بتحتاج iOS 16).
 
 ---
 

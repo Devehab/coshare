@@ -120,11 +120,15 @@ jobs:
             docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/s:ro" "$1" bash /s/install-test.sh "/dist/$2" || failed="$failed $1:$2"
             echo "::endgroup::"
           }
+          # Releases from the last five years and more: Ubuntu 20.04+, Debian 11+, Fedora, RHEL/Rocky 9.
+          run ubuntu:20.04 CoShare-${{ matrix.deb }}.deb
           run ubuntu:22.04 CoShare-${{ matrix.deb }}.deb
           run ubuntu:24.04 CoShare-${{ matrix.deb }}.deb
+          run debian:11 CoShare-${{ matrix.deb }}.deb
           run debian:12 CoShare-${{ matrix.deb }}.deb
           run fedora:41 CoShare-${{ matrix.rpm }}.rpm
-          run ubuntu:22.04 CoShare-${{ matrix.appimage }}.AppImage
+          run rockylinux:9 CoShare-${{ matrix.rpm }}.rpm
+          run ubuntu:20.04 CoShare-${{ matrix.appimage }}.AppImage
           if [ -n "$failed" ]; then echo "::error::install test failed on:$failed"; exit 1; fi
 
       - name: One-line installer (website/install.sh) on clean distributions
@@ -138,12 +142,15 @@ jobs:
               "$1" bash /s/installer-test.sh "$2" || failed="$failed $1:${2:-auto}"
             echo "::endgroup::"
           }
+          run ubuntu:20.04 ""
           run ubuntu:22.04 ""
           run ubuntu:24.04 ""
+          run debian:11 ""
           run debian:12 ""
           run fedora:41 ""
+          run rockylinux:9 ""
           run fedora:41 local
-          run debian:12 local
+          run debian:11 local
           if [ -n "$failed" ]; then echo "::error::one-line installer failed on:$failed"; exit 1; fi
 
       - uses: actions/upload-artifact@v4
@@ -188,7 +195,7 @@ jobs:
             | Ubuntu, Debian, Mint, Pop!_OS, elementary | `CoShare-amd64.deb` (ARM: `CoShare-arm64.deb`) |
             | Fedora, RHEL, openSUSE | `CoShare-x86_64.rpm` (ARM: `CoShare-aarch64.rpm`) |
             | Any Linux (Arch, Manjaro, …) | `CoShare-x86_64.AppImage` (ARM: `CoShare-arm64.AppImage`) |
-            | macOS 13+ | `CoShare-mac.zip` |
+            | macOS 12+ | `CoShare-mac.zip` |
 
             Windows asks once to allow CoShare on the network: choose **Private networks**.
             The AppImage runs on any distribution: `chmod +x CoShare-*.AppImage` and open it.

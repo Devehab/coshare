@@ -1,9 +1,11 @@
+// Shortcuts actions need iOS 16 (App Intents); on iOS 15 the app simply works without them.
 import AppIntents
 
 // Shortcuts actions. They run in the background without opening the app, so they can be
 // bound to Back Tap, the Action button, Control Center, Siri or a personal automation
 // (e.g. "when a message containing 'code' arrives → send it to my Macs").
 
+@available(iOS 16.0, *)
 struct SendClipboardIntent: AppIntent {
     static let title: LocalizedStringResource = "إرسال الحافظة للأجهزة"
     static let description = IntentDescription("يرسل النص أو الصورة الموجودة في حافظة الآيفون الآن إلى كل أجهزتك على نفس الشبكة.")
@@ -19,6 +21,7 @@ struct SendClipboardIntent: AppIntent {
     }
 }
 
+@available(iOS 16.0, *)
 struct SendTextIntent: AppIntent {
     static let title: LocalizedStringResource = "إرسال نص للأجهزة"
     static let description = IntentDescription("يرسل نصاً (مثل رسالة كود التحقق) إلى كل الأجهزة ويضعه في حافظتها. فعّل «الكود فقط» لاستخراج رمز التحقق من الرسالة تلقائياً.")
@@ -46,6 +49,7 @@ struct SendTextIntent: AppIntent {
     }
 }
 
+@available(iOS 16.0, *)
 struct FetchLatestIntent: AppIntent {
     static let title: LocalizedStringResource = "جلب آخر نسخ من الأجهزة"
     static let description = IntentDescription("يجلب آخر شيء نُسخ على أي جهاز ويضعه في حافظة الآيفون لتلصقه مباشرة.")
@@ -70,6 +74,7 @@ struct FetchLatestIntent: AppIntent {
     }
 }
 
+@available(iOS 16.0, *)
 struct CoShareShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: SendClipboardIntent(),

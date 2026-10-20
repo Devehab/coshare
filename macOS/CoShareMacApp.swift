@@ -1,7 +1,23 @@
 import SwiftUI
 import Combine
 
+/// macOS 13 and later get the SwiftUI menu-bar extra and window; macOS 12 gets the same panel and
+/// window from an AppKit status item (MenuBarExtra and Window don't exist there).
 @main
+enum CoShareLauncher {
+    @MainActor
+    static func main() {
+        // COSHARE_LEGACY_SHELL=1 tries the macOS 12 shell on a newer Mac (testing).
+        let forceLegacy = ProcessInfo.processInfo.environment["COSHARE_LEGACY_SHELL"] != nil
+        if #available(macOS 13.0, *), !forceLegacy {
+            CoShareMacApp.main()
+        } else {
+            LegacyStatusApp.main()
+        }
+    }
+}
+
+@available(macOS 13.0, *)
 struct CoShareMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var engine = SyncEngine.shared
@@ -33,7 +49,7 @@ struct CoShareMacApp: App {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate {
     private var dockSubscription: AnyCancellable?
 
     /// Clicking the Dock icon (or launching CoShare again from Finder/Spotlight) opens the window.
@@ -81,25 +97,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-struct MenuBarLabel: View {
-    @ObservedObject var engine: SyncEngine
-    @ObservedObject var settings: AppSettings
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some View {
-        Image(systemName: symbol)
-            .onAppear {
-                // The menu bar label lives as long as the app: lend its openWindow to AppKit code.
-                MainWindow.opener = { openWindow(id: MainWindow.id) }
-            }
-    }
-
-    private var symbol: String {
-        switch engine.pulse {
+/// The menu-bar icon: a short arrow when a clip goes out or comes in, otherwise the connection state.
+enum StatusIcon {
+    static func symbol(pulse: SyncEngine.Pulse, presence: NetworkPresence) -> String {
+        switch pulse {
         case .sent: return "arrow.up.circle.fill"
         case .received: return "arrow.down.circle.fill"
         case .idle:
-            switch engine.presence {
+            switch presence {
             case .online: return "doc.on.clipboard"
             case .paused: return "pause.circle"
             case .quiet: return "moon.zzz"
@@ -108,3 +113,93 @@ struct MenuBarLabel: View {
     }
 }
 
+@available(macOS 13.0, *)
+struct MenuBarLabel: View {
+    @ObservedObject var engine: SyncEngine
+    @ObservedObject var settings: AppSettings
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Image(systemName: StatusIcon.symbol(pulse: engine.pulse, presence: engine.presence))
+            .onAppear {
+                // The menu bar label lives as long as the app: lend its openWindow to AppKit code.
+                MainWindow.opener = { openWindow(id: MainWindow.id) }
+            }
+    }
+}
+
+// MARK: - macOS 12
+
+/// The same CoShare panel in a status-item popover, and the same window, built with AppKit.
+@MainActor
+enum LegacyStatusApp {
+    /// NSApplication only keeps a weak reference to its delegate.
+    private static let delegate = LegacyAppDelegate()
+
+    static func main() {
+        let app = NSApplication.shared
+        app.delegate = delegate
+        app.run()
+    }
+}
+
+final class LegacyAppDelegate: AppDelegate {
+    private var statusItem: NSStatusItem?
+    private let popover = NSPopover()
+    private var window: NSWindow?
+    private var iconSubscription: AnyCancellable?
+
+    override func applicationDidFinishLaunching(_ notification: Notification) {
+        MainWindow.opener = { [weak self] in self?.showWindow() }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.button?.target = self
+        item.button?.action = #selector(togglePopover(_:))
+        statusItem = item
+        popover.behavior = .transient
+        popover.contentViewController = NSHostingController(rootView: Self.panel())
+        let engine = SyncEngine.shared
+        iconSubscription = engine.$pulse.combineLatest(engine.$presence)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] pulse, presence in
+                let image = NSImage(systemSymbolName: StatusIcon.symbol(pulse: pulse, presence: presence),
+                                    accessibilityDescription: "CoShare")
+                image?.isTemplate = true
+                self?.statusItem?.button?.image = image
+            }
+        super.applicationDidFinishLaunching(notification)
+    }
+
+    @MainActor
+    private static func panel() -> some View {
+        let engine = SyncEngine.shared
+        return MenuView()
+            .environmentObject(engine)
+            .environmentObject(engine.history)
+            .environmentObject(engine.settings)
+            .environmentObject(engine.log)
+            .tint(.signal)
+    }
+
+    @MainActor @objc private func togglePopover(_ sender: Any?) {
+        guard let button = statusItem?.button else { return }
+        if popover.isShown {
+            popover.performClose(sender)
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
+        }
+    }
+
+    @MainActor private func showWindow() {
+        if window == nil {
+            let newWindow = NSWindow(contentViewController: NSHostingController(rootView: Self.panel()))
+            newWindow.title = "CoShare"
+            newWindow.styleMask = [.titled, .closable, .miniaturizable]
+            newWindow.isReleasedWhenClosed = false
+            newWindow.center()
+            window = newWindow
+        }
+        window?.makeKeyAndOrderFront(nil)
+    }
+}

@@ -20,7 +20,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             List {
                 Section {
                     statusRow
@@ -233,7 +233,7 @@ struct SettingsView: View {
 
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             Form {
                 Section {
                     TextField("مثلاً: آيفون إيهاب", text: $settings.deviceName)
@@ -318,15 +318,40 @@ struct GroupsView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
-            screen { GroupsHome { path.append($0) } }
-                .navigationTitle("المجموعات")
-                .navigationDestination(for: GroupsRoute.self) { route in
-                    screen { destination(route) }
-                        .navigationTitle(title(for: route))
+        Group {
+            if #available(iOS 16.0, *) {
+                NavigationStack(path: $path) {
+                    home.navigationDestination(for: GroupsRoute.self) { page($0) }
                 }
+            } else {
+                // iOS 15: Groups is only ever one page deep, so one link does it; replacing the route
+                // (create → its new group) swaps the page in place.
+                NavigationView {
+                    home.background(
+                        NavigationLink(destination: legacyPage, isActive: Binding(
+                            get: { !path.isEmpty },
+                            set: { if !$0 { path.removeAll() } }
+                        )) { EmptyView() }
+                    )
+                }
+                .navigationViewStyle(.stack)
+            }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    private var home: some View {
+        screen { GroupsHome { path.append($0) } }
+            .navigationTitle("المجموعات")
+    }
+
+    private func page(_ route: GroupsRoute) -> some View {
+        screen { destination(route) }
+            .navigationTitle(title(for: route))
+    }
+
+    @ViewBuilder private var legacyPage: some View {
+        if let route = path.last { page(route) }
     }
 
     private func screen<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -367,7 +392,7 @@ struct LogView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             List {
                 if log.entries.isEmpty {
                     Text("السجل فارغ").foregroundColor(.secondary)
@@ -384,5 +409,18 @@ struct LogView: View {
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+}
+
+/// NavigationStack on iOS 16 and later, a stack-style NavigationView on iOS 15.
+struct NavigationContainer<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        if #available(iOS 16.0, *) {
+            NavigationStack(root: content)
+        } else {
+            NavigationView(content: content).navigationViewStyle(.stack)
+        }
     }
 }

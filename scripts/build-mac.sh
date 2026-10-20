@@ -31,7 +31,7 @@ mkdir -p build/obj "$APP/Contents/MacOS" "$APP/Contents/Resources"
 for arch in arm64 x86_64; do
   echo "• Compiling ${arch}…"
   xcrun swiftc -O -parse-as-library -swift-version 5 \
-    -sdk "$SDK" -target "$arch-apple-macos13.0" \
+    -sdk "$SDK" -target "$arch-apple-macos12.0" \
     Shared/*.swift macOS/*.swift \
     -o "build/obj/CoShare-$arch"
 done
@@ -54,7 +54,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 	<key>CFBundleShortVersionString</key><string>${VERSION}</string>
 	<key>CFBundleVersion</key><string>1</string>
 	<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
-	<key>LSMinimumSystemVersion</key><string>13.0</string>
+	<key>LSMinimumSystemVersion</key><string>12.0</string>
 	<key>LSUIElement</key><true/>
 	<key>NSHighResolutionCapable</key><true/>
 	<key>NSLocalNetworkUsageDescription</key><string>CoShare يتصل بأجهزتك على نفس شبكة الواي فاي لمشاركة النسخ واللصق.</string>
