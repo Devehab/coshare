@@ -121,13 +121,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ github.ref_name }}
         run: |
-          notes="Always the newest CoShare for Android (now ${VERSION#android-}). Android 8 or later, phones and tablets."
+          title="CoShare for Android ${VERSION#android-v}"
+          notes="Always the newest CoShare for Android (now ${VERSION#android-v}): https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk
+          Android 8 or later, phones and tablets. Install guide: https://devehab.github.io/coshare/#android"
           if gh release view android-latest > /dev/null 2>&1; then
             # Move the tag to this build, then swap the file; the download link stays the same.
             git push -f origin "$GITHUB_SHA:refs/tags/android-latest"
             gh release upload android-latest CoShare-android.apk --clobber
-            gh release edit android-latest --notes "$notes" --latest=false
+            gh release edit android-latest --title "$title" --notes "$notes" --latest=false
           else
             gh release create android-latest CoShare-android.apk --target "$GITHUB_SHA" \
-              --title "CoShare for Android (latest)" --notes "$notes" --latest=false
+              --title "$title" --notes "$notes" --latest=false
           fi
