@@ -520,13 +520,41 @@
             <div class="os-icon"><svg style="color:#ffcf5c"><use href="#i-linux"/></svg></div>
             <h3>Linux</h3>
             <div class="req" data-i18n="dl.linux.req">Ubuntu و Debian و Mint و Fedora وكل التوزيعات</div>
-            <a class="btn btn-primary btn-sm" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-amd64.deb" data-platform="linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.linux.btn">تحميل ‎.deb (Ubuntu و Debian)</span></a>
-            <div class="dl-alt">
-              <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.rpm" data-i18n="dl.linux.rpm">‎.rpm (Fedora)</a>
-              <span>·</span>
-              <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.AppImage" data-i18n="dl.linux.appimage">AppImage (أي توزيعة)</a>
-              <span>·</span>
-              <a href="https://github.com/Devehab/coshare/releases/latest" data-i18n="dl.linux.arm">ARM</a>
+            <a class="btn btn-primary btn-sm" href="#linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.linux.btn">تثبيت بأمر واحد أو حزمة</span></a>
+            <div class="dl-alt"><span data-i18n="dl.linux.alt">‎.deb · ‎.rpm · AppImage</span></div>
+          </div>
+        </div>
+
+        <div class="card linux-panel reveal" id="linux">
+          <div class="lp-head">
+            <div class="os-icon"><svg style="color:#ffcf5c"><use href="#i-linux"/></svg></div>
+            <div>
+              <h3 data-i18n="lx.title">تثبيت CoShare على لينكس</h3>
+              <p data-i18n="lx.sub">اختار الطريقة اللي بتريحك. الأمر الواحد بيعمل كل شي لحاله.</p>
+            </div>
+          </div>
+          <div class="lp-grid">
+            <div class="lp-option lp-recommended">
+              <span class="lp-tag" data-i18n="lx.rec">الأسهل</span>
+              <h4 data-i18n="lx.cmd.title">أمر واحد بالتيرمينال</h4>
+              <div class="cmd" dir="ltr"><code id="linuxCmd">curl -fsSL https://devehab.github.io/coshare/install.sh | bash</code><button class="copy-btn" type="button" data-copy="linuxCmd" data-i18n="lx.copy">نسخ</button></div>
+              <ul class="lp-steps">
+                <li data-i18n="lx.s1">بيعرف توزيعتك ومعالجك (Intel/AMD أو ARM) لحاله</li>
+                <li data-i18n="lx.s2">بيثبّت الحزمة المناسبة مع كل متطلباتها: ‎.deb أو ‎.rpm، أو بمجلدك على باقي التوزيعات</li>
+                <li data-i18n="lx.s3">بيتأكد إن التشفير والشبكة والحافظة شغالين، وبيفتح CoShare وبيخليه يشتغل مع بدء الجهاز</li>
+                <li data-i18n="lx.s4">نفس الأمر بيحدّثه لآخر إصدار</li>
+              </ul>
+              <p class="lp-small"><span data-i18n="lx.uninstall">للإزالة:</span> <code dir="ltr">curl -fsSL https://devehab.github.io/coshare/install.sh | bash -s -- --uninstall</code></p>
+            </div>
+            <div class="lp-option">
+              <h4 data-i18n="lx.pkg.title">أو حمّل حزمة</h4>
+              <a class="lp-pkg" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-amd64.deb"><strong>Ubuntu · Debian · Mint</strong><span>.deb</span></a>
+              <a class="lp-pkg" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.rpm"><strong>Fedora · RHEL</strong><span>.rpm</span></a>
+              <a class="lp-pkg" href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-x86_64.AppImage"><strong data-i18n="lx.any">أي توزيعة (Arch و openSUSE…)</strong><span>AppImage</span></a>
+              <p class="lp-small"><span data-i18n="lx.arm">أجهزة ARM:</span>
+                <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-arm64.deb" dir="ltr">.deb</a> ·
+                <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-aarch64.rpm" dir="ltr">.rpm</a> ·
+                <a href="https://github.com/Devehab/coshare/releases/latest/download/CoShare-arm64.AppImage" dir="ltr">AppImage</a></p>
             </div>
           </div>
         </div>

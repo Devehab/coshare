@@ -54,7 +54,13 @@ scripts/build-mac.sh --install
 
 ## ٣) ويندوز ولينكس
 
-نزّل من [صفحة التحميل](https://devehab.github.io/coshare/#download) أو من [آخر إصدار على GitHub](https://github.com/Devehab/coshare/releases/latest):
+**لينكس بأمر واحد** (أوبونتو وديبيان وفيدورا وآرتش وغيرها، Intel/AMD و ARM):
+```bash
+curl -fsSL https://devehab.github.io/coshare/install.sh | bash
+```
+بيختار الحزمة المناسبة، وبيثبّتها مع متطلباتها، وبيتأكد إن التشفير والشبكة والحافظة شغالين، وبيفتح CoShare. نفس الأمر بيحدّثه، وللإزالة: `curl -fsSL https://devehab.github.io/coshare/install.sh | bash -s -- --uninstall`.
+
+أو نزّل الحزمة بإيدك من [صفحة التحميل](https://devehab.github.io/coshare/#download) أو من [آخر إصدار على GitHub](https://github.com/Devehab/coshare/releases/latest):
 
 | النظام | الملف |
 |---|---|

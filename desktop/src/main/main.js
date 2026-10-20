@@ -9,6 +9,8 @@ const { pathToFileURL } = require('url');
 const isLinux = process.platform === 'linux';
 const isWindows = process.platform === 'win32';
 const selfTest = process.argv.includes('--self-test');
+// --check: the installer's quick version, which leaves the person's clipboard alone.
+const quickCheck = process.argv.includes('--check');
 const startHidden = process.argv.includes('--hidden');
 
 if (isLinux) {
@@ -45,7 +47,8 @@ function applyLaunchAtLogin(enabled) {
   if (isLinux) {
     const file = linuxAutostartFile();
     if (!enabled) { try { fs.unlinkSync(file); } catch {} return; }
-    const exe = process.env.APPIMAGE || process.execPath;
+    // COSHARE_LAUNCHER: the wrapper install.sh writes for an unpacked AppImage.
+    const exe = process.env.COSHARE_LAUNCHER || process.env.APPIMAGE || process.execPath;
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, ['[Desktop Entry]', 'Type=Application', 'Name=CoShare', 'Comment=One clipboard for all your devices',
       `Exec="${exe}" --hidden`, 'Icon=coshare', 'X-GNOME-Autostart-enabled=true', 'Terminal=false', ''].join('\n'));
@@ -165,17 +168,24 @@ async function runSelfTest() {
     const { SystemClipboard } = require('./clipboard');
     const cb = new SystemClipboard((m) => console.log('clipboard:', m));
     checks.clipboardWatcher = cb.counter.name;
-    const before = cb.changeToken();
-    cb.write({ kind: 'text', text: 'CoShare self-test مرحبا' });
-    await new Promise((r) => setTimeout(r, 300));
-    const read = cb.read({ includeImages: true, maxImageBytes: 1e8 });
-    checks.clipboardText = !!read && read.text === 'CoShare self-test مرحبا';
-    checks.clipboardChangeDetected = cb.changeToken() !== before;
-    const png = fs.readFileSync(path.join(ASSETS, 'tray.png'));
-    cb.write({ kind: 'image', data: png, uti: 'public.png' });
-    await new Promise((r) => setTimeout(r, 300));
-    const img = cb.read({ includeImages: true, maxImageBytes: 1e8 });
-    checks.clipboardImage = !!img && img.kind === 'image' && img.data.length > 100;
+    if (quickCheck) {
+      // Reading is enough to know the clipboard is reachable; writing would replace what the person copied.
+      cb.read({ includeImages: false, maxImageBytes: 0 });
+      cb.changeToken();
+      checks.clipboardReadable = true;
+    } else {
+      const before = cb.changeToken();
+      cb.write({ kind: 'text', text: 'CoShare self-test مرحبا' });
+      await new Promise((r) => setTimeout(r, 300));
+      const read = cb.read({ includeImages: true, maxImageBytes: 1e8 });
+      checks.clipboardText = !!read && read.text === 'CoShare self-test مرحبا';
+      checks.clipboardChangeDetected = cb.changeToken() !== before;
+      const png = fs.readFileSync(path.join(ASSETS, 'tray.png'));
+      cb.write({ kind: 'image', data: png, uti: 'public.png' });
+      await new Promise((r) => setTimeout(r, 300));
+      const img = cb.read({ includeImages: true, maxImageBytes: 1e8 });
+      checks.clipboardImage = !!img && img.kind === 'image' && img.data.length > 100;
+    }
   } catch (e) { checks.clipboard = String(e && e.stack || e); }
   try {
     const netMod = require('net');
@@ -196,12 +206,12 @@ async function runSelfTest() {
 
 // ------------------------------------------------------------------ start
 
-if (!selfTest && !app.requestSingleInstanceLock()) {
+if (!selfTest && !quickCheck && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => showWindow());
   app.whenReady().then(async () => {
-    if (selfTest) return runSelfTest();
+    if (selfTest || quickCheck) return runSelfTest();
 
     protocol.handle('coshare-blob', (request) => {
       const blobs = path.join(app.getPath('userData'), 'blobs');

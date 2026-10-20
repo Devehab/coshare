@@ -124,10 +124,21 @@
     "dl.win.req": "Windows 10 & 11 · Intel, AMD & ARM",
     "dl.win.arm": "ARM version (Snapdragon)",
     "dl.linux.req": "Ubuntu, Debian, Mint, Fedora & every distro",
-    "dl.linux.btn": "Download .deb (Ubuntu & Debian)",
-    "dl.linux.rpm": ".rpm (Fedora)",
-    "dl.linux.appimage": "AppImage (any distro)",
-    "dl.linux.arm": "ARM",
+    "dl.linux.btn": "One command or a package",
+    "dl.linux.alt": ".deb · .rpm · AppImage",
+    "lx.title": "Install CoShare on Linux",
+    "lx.sub": "Pick whichever suits you. The one command does everything for you.",
+    "lx.rec": "Easiest",
+    "lx.cmd.title": "One terminal command",
+    "lx.copy": "Copy",
+    "lx.s1": "Detects your distribution and processor (Intel/AMD or ARM)",
+    "lx.s2": "Installs the right package with all its dependencies: .deb, .rpm, or into your home folder on other distributions",
+    "lx.s3": "Checks that encryption, networking and the clipboard work, then opens CoShare and starts it at login",
+    "lx.s4": "Run it again any time to update",
+    "lx.uninstall": "To uninstall:",
+    "lx.pkg.title": "Or download a package",
+    "lx.any": "Any distribution (Arch, openSUSE…)",
+    "lx.arm": "ARM devices:",
     "dl.note": "Version 1.0 · Free · No account · No ads",
 
     "faq.kicker": "FAQ",
@@ -268,6 +279,32 @@
           ? "نسخة " + name + " قيد التجهيز وستتوفر قريباً هنا."
           : "The " + name + " build is on its way — it will be available here soon.");
       });
+    });
+  });
+
+  // Copy buttons for terminal commands.
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var code = document.getElementById(button.getAttribute("data-copy"));
+      var label = button.innerHTML;
+      function done() {
+        button.textContent = lang === "ar" ? "✓ تم النسخ" : "✓ Copied";
+        button.classList.add("copied");
+        setTimeout(function () { button.innerHTML = label; button.classList.remove("copied"); }, 1800);
+      }
+      function fallback() {
+        var range = document.createRange();
+        range.selectNodeContents(code);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try { document.execCommand("copy"); done(); } catch (e) { /* the command stays selected */ }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code.textContent).then(done, fallback);
+      } else {
+        fallback();
+      }
     });
   });
 

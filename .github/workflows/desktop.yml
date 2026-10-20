@@ -47,6 +47,10 @@ jobs:
           node node_modules/electron/install.js
           npm run natives
 
+      - name: Version from the tag (desktop-v1.2.3 → 1.2.3), so package managers see each release as an update
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#desktop-v}"
+
       - name: Unit and interop tests
         run: npm test
 
@@ -123,6 +127,25 @@ jobs:
           run ubuntu:22.04 CoShare-${{ matrix.appimage }}.AppImage
           if [ -n "$failed" ]; then echo "::error::install test failed on:$failed"; exit 1; fi
 
+      - name: One-line installer (website/install.sh) on clean distributions
+        if: matrix.platform == 'linux'
+        run: |
+          failed=""
+          run() {
+            echo "::group::$1 · ${2:-auto}"
+            docker run --rm --cap-add SYS_ADMIN --security-opt seccomp=unconfined \
+              -v "$PWD/dist:/dist:ro" -v "$PWD/../website:/site:ro" -v "$PWD/scripts:/s:ro" \
+              "$1" bash /s/installer-test.sh "$2" || failed="$failed $1:${2:-auto}"
+            echo "::endgroup::"
+          }
+          run ubuntu:22.04 ""
+          run ubuntu:24.04 ""
+          run debian:12 ""
+          run fedora:41 ""
+          run fedora:41 local
+          run debian:12 local
+          if [ -n "$failed" ]; then echo "::error::one-line installer failed on:$failed"; exit 1; fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: coshare-${{ matrix.platform }}-${{ matrix.arch }}
@@ -152,6 +175,11 @@ jobs:
           files: out/*
           body: |
             **CoShare — one clipboard for all your devices.** Local network only, end-to-end encrypted, any account.
+
+            **Linux in one line** (any distribution, Intel/AMD or ARM; installs, checks and starts CoShare):
+            ```
+            curl -fsSL https://devehab.github.io/coshare/install.sh | bash
+            ```
 
             | System | File |
             |---|---|

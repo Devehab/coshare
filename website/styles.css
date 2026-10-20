@@ -364,3 +364,36 @@ footer { padding: 50px 0 40px; color: var(--dim); font-size: 14px; }
 .mini-device .pw-field { direction: ltr; letter-spacing: 4px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid var(--border); font-size: 15px; }
 .mini-device .members { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
 .mini-device .members li.new { color: var(--green); font-weight: 600; }
+
+/* Linux: one command or a package */
+.linux-panel { margin-top: 28px; padding: 28px; text-align: start; scroll-margin-top: 90px; }
+.lp-head { display: flex; gap: 16px; align-items: center; margin-bottom: 22px; }
+.lp-head .os-icon { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; flex: none;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border); }
+.lp-head .os-icon svg { width: 28px; height: 28px; }
+.lp-head h3 { margin: 0; font-size: 22px; }
+.lp-head p { margin: 4px 0 0; color: var(--muted); }
+.lp-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; }
+.lp-option { position: relative; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 22px; }
+.lp-option h4 { margin: 0 0 4px; font-size: 17px; }
+.lp-recommended { background: var(--grad-soft); border-color: rgba(122,77,255,.45); }
+.lp-tag { position: absolute; top: 16px; inset-inline-end: 16px; font-size: 11.5px; padding: 3px 10px; border-radius: 999px; background: var(--grad); }
+.cmd { display: flex; align-items: center; gap: 10px; margin: 14px 0 16px; padding: 10px 10px 10px 16px; border-radius: 12px;
+  background: #02040a; border: 1px solid var(--border-strong); }
+.cmd code { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; color: #e8ecff; user-select: all;
+  font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.copy-btn { flex: none; border: 0; border-radius: 9px; padding: 8px 16px; background: var(--grad); color: #fff;
+  font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: transform .2s; }
+.copy-btn:hover { transform: translateY(-1px); }
+.copy-btn.copied { background: #1fb36b; }
+.lp-steps { margin: 0; padding-inline-start: 20px; color: var(--muted); line-height: 1.9; font-size: 14.5px; }
+.lp-small { margin: 14px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.8; }
+.lp-small code { display: block; margin-top: 4px; font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--muted); text-align: left; overflow-wrap: anywhere; user-select: all; }
+.lp-small a { color: var(--muted); }
+.lp-pkg { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; padding: 14px 16px;
+  border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: inherit; text-decoration: none;
+  transition: border-color .2s, transform .2s; }
+.lp-pkg:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.lp-pkg span { color: var(--cyan); font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (max-width: 860px) { .lp-grid { grid-template-columns: 1fr; } .linux-panel { padding: 20px; } }
