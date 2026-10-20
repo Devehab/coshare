@@ -12,3 +12,10 @@ DerivedData/
 
 # Local tooling
 .claude/
+
+# Android (Gradle); the release signing key never goes in the repo
+android/.gradle/
+android/.kotlin/
+android/local.properties
+*.jks
+*.keystore

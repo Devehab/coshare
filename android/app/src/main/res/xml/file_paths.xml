@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Images received from other devices, put on the clipboard as content:// links. -->
+    <cache-path name="clips" path="clips/" />
+</paths>
