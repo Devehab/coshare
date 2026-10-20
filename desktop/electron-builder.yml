@@ -17,8 +17,6 @@ electronLanguages: [en-US, ar]
 toolsets:
   # Static AppImage runtime: no libfuse2 or libz.so needed (the legacy arm64 runtime linked libz.so).
   appimage: "1.0.3"
-  # NSIS 3.12: the legacy 3.0.4 bundle extracted no files on Windows on ARM.
-  nsis: "1.2.1"
 extraMetadata:
   main: src/main/main.js
 

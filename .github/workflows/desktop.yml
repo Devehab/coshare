@@ -56,6 +56,10 @@ jobs:
 
       - name: Build packages
         run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+        env:
+          # 7-Zip packs ARM64 executables with its ARM64 filter, which the installer's extractor can't
+          # read: CoShare.exe and its DLLs were silently left out. The x86 filter is safe for any file.
+          ELECTRON_BUILDER_7Z_FILTER: ${{ matrix.platform == 'win' && matrix.arch == 'arm64' && 'BCJ' || '' }}
 
       - name: Self-test the packaged app (Windows)
         if: matrix.platform == 'win'
