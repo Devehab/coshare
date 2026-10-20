@@ -129,6 +129,24 @@
     "dl.linux.req": "Ubuntu, Debian, Mint, Fedora & every distro",
     "dl.linux.btn": "One command or a package",
     "dl.linux.alt": ".deb · .rpm · AppImage",
+    "dl.android.guide": "How to install",
+    "ad.title": "Install CoShare on Android",
+    "ad.sub": "One file for every phone and tablet, Android 8 or later. Ready in a minute.",
+    "ad.tag": "Step by step",
+    "ad.steps.title": "Installing",
+    "ad.s1": "Open this page on your phone and tap “Download APK”.",
+    "ad.s2": "Open the file from the notification or Downloads. If Android asks, allow your browser to “Install unknown apps”, then go back and tap “Install”.",
+    "ad.s3": "If Play Protect says it doesn’t recognise the app: “More details” → “Install anyway”. CoShare is open source and nothing leaves your network.",
+    "ad.s4": "Open CoShare and allow notifications (so it keeps running in the background), and on Android 17 “Nearby devices”.",
+    "ad.s5": "Create a group, or “Join a group” → “Scan QR code” from your other device. Done!",
+    "ad.btn": "Download APK",
+    "ad.update": "To update: download the file again and install it over the old one. Your groups and history stay.",
+    "ad.qr.title": "On a computer?",
+    "ad.qr.sub": "Scan the code with your phone’s camera to download the app straight to it.",
+    "ad.use.title": "Once it’s installed",
+    "ad.u1": "Whatever you copy on your other devices arrives on the phone, ready to paste at once, even with the screen off.",
+    "ad.u2": "Android lets no app read the clipboard in the background. To send from the phone: open CoShare, or tap “Send clipboard” in the notification or Quick Settings, or Share → “Send to my devices”.",
+    "ad.u3": "Xiaomi, Huawei and Samsung: in CoShare’s settings choose “Exclude from battery saving” so it keeps running.",
     "lx.title": "Install CoShare on Linux",
     "lx.sub": "Pick whichever suits you. The one command does everything for you.",
     "lx.rec": "Easiest",
@@ -177,7 +195,8 @@
     "footer.security": "Security",
     "footer.source": "Source code",
     "footer.faq": "FAQ",
-    "footer.download": "Download"
+    "footer.download": "Download",
+    "footer.android": "The Android robot is reproduced or modified from work created and shared by Google and used according to terms described in the Creative Commons 3.0 Attribution License."
   };
 
   var META = {
@@ -273,6 +292,8 @@
       if (stickyLabel) stickyLabel.textContent = text;
       // Linux visitors go straight to the one-line install.
       if (os === "linux") { hero.href = "#linux"; stickyLabel.parentNode.href = "#linux"; }
+      // Android visitors get the short install guide, with the download button in it.
+      if (os === "android") { hero.href = "#android"; stickyLabel.parentNode.href = "#android"; }
     }
   }
 

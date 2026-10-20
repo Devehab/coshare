@@ -39,7 +39,7 @@
     <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z"/></symbol>
     <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 18.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 19h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="i-android" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M2.8 18.2a9.2 9.2 0 0 1 18.4 0zM9.9 14.3a1.15 1.15 0 1 1-2.3 0 1.15 1.15 0 1 1 2.3 0zm6.5 0a1.15 1.15 0 1 1-2.3 0 1.15 1.15 0 1 1 2.3 0z"/><path d="M7.1 10.4L5.3 7.4M16.9 10.4l1.8-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-android" viewBox="0 0 24 24"><g fill="currentColor"><path fill-rule="evenodd" d="M5.5 9.6a6.5 6.5 0 0 1 13 0zM10.55 7.3a.95.95 0 1 1-1.9 0 .95.95 0 1 1 1.9 0zm4.8 0a.95.95 0 1 1-1.9 0 .95.95 0 1 1 1.9 0z"/><path d="M5.5 10.7h13v7.1a1.5 1.5 0 0 1-1.5 1.5H7a1.5 1.5 0 0 1-1.5-1.5z"/><rect x="2.2" y="10.7" width="2.4" height="6.6" rx="1.2"/><rect x="19.4" y="10.7" width="2.4" height="6.6" rx="1.2"/><rect x="8.1" y="18" width="2.4" height="4.3" rx="1.2"/><rect x="13.5" y="18" width="2.4" height="4.3" rx="1.2"/></g><path d="M8.2 4.1L7 2.2M15.8 4.1L17 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
     <symbol id="i-windows" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4l7.4-1v7.1H3V5.4zm8.6-1.2L21 3v8.5h-9.4V4.2zM3 12.6h7.4v7.1L3 18.6v-6zm8.6 0H21V21l-9.4-1.3v-7.1z"/></symbol>
     <symbol id="i-linux" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 9.5l3 2.5-3 2.5M11.5 15h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18.5" r="1" fill="currentColor"/></symbol>
@@ -517,8 +517,8 @@
             <div class="os-icon"><svg><use href="#i-android"/></svg></div>
             <h3>Android</h3>
             <div class="req" data-i18n="dl.android.req">Android 8 أو أحدث · هواتف وتابلت</div>
-            <a class="btn btn-primary btn-sm" href="downloads/CoShare-android.apk" data-platform="android"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
-            <div class="dl-alt" aria-hidden="true"></div>
+            <a class="btn btn-primary btn-sm" href="https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk" data-platform="android" id="androidDownload"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
+            <div class="dl-alt"><a href="#android" data-i18n="dl.android.guide">طريقة التثبيت</a></div>
           </div>
           <div class="card dl-card reveal d3" data-os="windows">
             <span class="badge" data-i18n="dl.rec">لجهازك</span>
@@ -535,6 +535,44 @@
             <div class="req" data-i18n="dl.linux.req">Ubuntu و Debian و Mint و Fedora وكل التوزيعات</div>
             <a class="btn btn-primary btn-sm" href="#linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.linux.btn">تثبيت بأمر واحد أو حزمة</span></a>
             <div class="dl-alt"><span data-i18n="dl.linux.alt">‎.deb · ‎.rpm · AppImage</span></div>
+          </div>
+        </div>
+
+        <div class="card linux-panel android-panel reveal" id="android">
+          <div class="lp-head">
+            <div class="os-icon"><svg><use href="#i-android"/></svg></div>
+            <div>
+              <h3 data-i18n="ad.title">تثبيت CoShare على أندرويد</h3>
+              <p data-i18n="ad.sub">ملف واحد لكل الموبايلات والتابلت، أندرويد 8 أو أحدث. دقيقة وحدة وبيكون جاهز.</p>
+            </div>
+          </div>
+          <div class="lp-grid">
+            <div class="lp-option lp-recommended">
+              <span class="lp-tag" data-i18n="ad.tag">خطوة بخطوة</span>
+              <h4 data-i18n="ad.steps.title">التثبيت</h4>
+              <ol class="lp-steps">
+                <li data-i18n="ad.s1">افتح هالصفحة على الموبايل واضغط «تحميل APK».</li>
+                <li data-i18n="ad.s2">افتح الملف من الإشعار أو من «التنزيلات». إذا سألك أندرويد، اسمح للمتصفح بـ«تثبيت التطبيقات غير المعروفة»، وارجع اضغط «تثبيت».</li>
+                <li data-i18n="ad.s3">إذا نبّهك Play Protect إنه التطبيق مش معروف: «مزيد من التفاصيل» ← «التثبيت على أي حال». CoShare مفتوح المصدر، وما بيطلع منه شي برّا شبكتك.</li>
+                <li data-i18n="ad.s4">افتح CoShare واسمح بالإشعارات (ليضل شغّال بالخلفية)، وعلى أندرويد 17 بـ«الأجهزة القريبة».</li>
+                <li data-i18n="ad.s5">أنشئ مجموعة، أو «انضمام لمجموعة» ← «مسح رمز QR» من جهازك التاني. وخلصت!</li>
+              </ol>
+              <a class="btn btn-primary btn-sm ad-btn" href="https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk" data-platform="android"><svg><use href="#i-download"/></svg><span data-i18n="ad.btn">تحميل APK</span></a>
+              <p class="lp-small" data-i18n="ad.update">للتحديث: نزّل الملف من جديد وثبّته فوق القديم، مجموعاتك وسجلّك بيضلّوا متل ما هنّي.</p>
+            </div>
+            <div class="lp-option">
+              <div class="ad-qr-block">
+                <h4 data-i18n="ad.qr.title">فاتح الصفحة من الكمبيوتر؟</h4>
+                <p class="ad-text" data-i18n="ad.qr.sub">امسح الرمز بكاميرا الموبايل، وبينزل التطبيق عليه مباشرة.</p>
+                <div class="ad-qr"><img src="assets/android-qr.svg" width="148" height="148" alt="QR: CoShare-android.apk" loading="lazy"></div>
+              </div>
+              <h4 data-i18n="ad.use.title">بعد التثبيت</h4>
+              <ul class="lp-steps">
+                <li data-i18n="ad.u1">اللي بتنسخه على أجهزتك التانية بيوصل للموبايل وبينلصق فوراً، حتى والشاشة مطفية.</li>
+                <li data-i18n="ad.u2">أندرويد ما بيسمح لأي تطبيق يقرأ الحافظة وهو بالخلفية. لتبعت من الموبايل: افتح CoShare، أو «إرسال الحافظة» من الإشعار أو الإعدادات السريعة، أو «مشاركة» ← «إرسال لأجهزتي».</li>
+                <li data-i18n="ad.u3">شاومي وهواوي وسامسونج: من إعدادات CoShare اختار «استثناء من توفير البطارية» ليضل شغّال.</li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -623,6 +661,7 @@
       </nav>
       <span>© <span id="year">2026</span> CoShare</span>
     </div>
+    <p class="container footer-note" data-i18n="footer.android">روبوت أندرويد مأخوذ أو معدّل من عمل أنشأته Google وشاركته وفق رخصة Creative Commons Attribution 3.0.</p>
   </footer>
 
   <div class="sticky-cta" id="stickyCta">

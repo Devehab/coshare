@@ -462,6 +462,13 @@ table.compare { width: 100%; border-collapse: collapse; }
 }
 .lp-pkg:hover { border-color: var(--ink); transform: translateY(-1px); }
 .lp-pkg span { color: var(--signal-ink); font: 500 13px var(--mono); }
+.android-panel ol.lp-steps li { margin-bottom: 4px; }
+.ad-btn { margin-top: 16px; }
+.ad-text { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; line-height: 1.8; }
+.ad-qr { width: 168px; padding: 10px; margin: 0 0 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
+.ad-qr img { display: block; width: 148px; height: 148px; image-rendering: pixelated; }
+/* On a phone the code can't be scanned from its own screen. */
+@media (max-width: 720px) and (pointer: coarse) { .ad-qr-block { display: none; } }
 @media (max-width: 860px) { .lp-grid { grid-template-columns: 1fr; } .linux-panel { padding: 20px; } }
 @media (max-width: 520px) { .lp-head h3 { font-size: 19px; } .lp-option { padding: 18px; } .lp-tag { position: static; display: inline-block; margin-bottom: 8px; } }
 
@@ -494,6 +501,7 @@ footer { padding: 46px 0 40px; color: var(--muted); font-size: 14.5px; }
 .footer-row nav { display: flex; gap: 6px 20px; flex-wrap: wrap; }
 .footer-row nav a { padding: 6px 0; }
 .footer-row a:hover { color: var(--ink); }
+.footer-note { margin-top: 14px; margin-bottom: 0; font-size: 12px; line-height: 1.6; color: var(--dim); }
 .brand-sm { font-size: 17px; }
 .brand-sm .logo { width: 26px; height: 26px; }
 @media (max-width: 720px) { footer { padding-bottom: 110px; } .footer-row { flex-direction: column; align-items: flex-start; } }

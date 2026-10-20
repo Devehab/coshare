@@ -81,7 +81,7 @@ curl -fsSL https://devehab.github.io/coshare/install.sh | bash
 
 ## ٤) أندرويد
 
-نزّل [`CoShare-android.apk`](https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk) (أندرويد 8 أو أحدث، موبايل وتابلت)، افتحه، واسمح للمتصفح «بتثبيت التطبيقات غير المعروفة» أول مرة.
+نزّل [`CoShare-android.apk`](https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk) (أندرويد 8 أو أحدث، موبايل وتابلت)، افتحه، واسمح للمتصفح «بتثبيت التطبيقات غير المعروفة» أول مرة. الخطوات بالصور والتفصيل: [دليل التثبيت على الموقع](https://devehab.github.io/coshare/#android).
 
 - أول ما تفتحه بيطلب **الإشعارات** (ليضل شغّال بالخلفية، مع زر «إرسال الحافظة» بالإشعار)، وعلى أندرويد 17 **الأجهزة القريبة** (بدونه ما بيقدر يوصل لأجهزتك على الشبكة).
 - **اللي بيوصلك بينلصق فوراً**، حتى والتطبيق بالخلفية والشاشة مطفية.
