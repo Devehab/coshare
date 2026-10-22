@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-title-ar="تثبيت CoShare على الآيفون والآيباد" data-title-en="Install CoShare on iPhone and iPad">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>تثبيت CoShare على الآيفون والآيباد</title>
+  <meta name="description" content="ثبّت CoShare على الآيفون أو الآيباد من الماك بسطر واحد بالتيرمينال، بحساب Apple تبعك (حتى لو مجاني). شرح كل خطوة، والنشر على App Store.">
+  <meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#13120f" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="https://devehab.github.io/coshare/ios.html">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preload" href="assets/fonts/readexpro-arabic-300-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/fonts.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#d24a22"/><rect x="25" y="12" width="24" height="31" rx="5" fill="#f5f0e8" opacity=".5"/><path d="M19.5 21H32l8 8v19a4 4 0 0 1-4 4H19.5a4 4 0 0 1-4-4V25a4 4 0 0 1 4-4z" fill="#f5f0e8"/><path d="M32 21v5.5a2.5 2.5 0 0 0 2.5 2.5H40" fill="none" stroke="#d24a22" stroke-width="2.4" stroke-linejoin="round"/><path d="M22 38.5h11M22 44h7" stroke="#d24a22" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="./" aria-label="CoShare"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>CoShare</a>
+      <nav class="nav-links" aria-label="Main">
+        <a href="./" data-ar="الرئيسية" data-en="Home">الرئيسية</a>
+        <a href="./#download" data-ar="التحميل" data-en="Download">التحميل</a>
+        <a href="https://github.com/Devehab/coshare" rel="noopener">GitHub</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="lang-toggle" id="langToggle" type="button">English</button>
+        <a class="btn btn-primary btn-sm" href="./#download" data-ar="باقي الأجهزة" data-en="Other devices" style="display:inline-flex">باقي الأجهزة</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================================ العربية ================================ -->
+    <div data-lang-block="ar">
+      <div class="container doc-hero">
+        <span class="kicker">iPhone و iPad</span>
+        <h1>CoShare على الآيفون والآيباد</h1>
+        <p class="lead">CoShare لسا مش على App Store، فبتثبّته متل المطورين: من الماك، بحساب Apple تبعك، حتى لو مجاني. سطر واحد بالتيرمينال بيعمل كل شي، وهالصفحة بتشرح شو بيصير بكل خطوة.</p>
+        <p class="doc-meta">بتحتاج: ماك · كابل للآيفون أو الآيباد · Apple ID (المجاني بيكفي) · iOS أو iPadOS 15 أو أحدث</p>
+      </div>
+
+      <div class="container doc-layout">
+        <nav class="doc-toc" aria-label="المحتويات">
+          <strong>المحتويات</strong>
+          <a href="#ar-fast">السطر الواحد</a>
+          <a href="#ar-need">قبل ما تبدأ</a>
+          <a href="#ar-steps">خطوة بخطوة</a>
+          <a href="#ar-renew">بعد ٧ أيام</a>
+          <a href="#ar-xcode">من Xcode مباشرة</a>
+          <a href="#ar-store">النشر على App Store</a>
+          <a href="#ar-help">مشاكل وحلولها</a>
+        </nav>
+
+        <article class="doc">
+          <div class="tldr">
+            <div><svg><use href="#i-check"/></svg><span><strong>سطر واحد.</strong> بيثبّت Xcode إذا ناقص، وبيتأكد من كل شي، وبيبني التطبيق وبيفتحه على جهازك.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>بيصلّح لحاله.</strong> إذا في خطوة ناقصة بيقلّك شو تعمل بالزبط، وبيكمّل أول ما تخلّص.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>بحسابك أنت.</strong> التطبيق بيتوقّع بـ Apple ID تبعك، وما بيمرق على حدا غيرك.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>كود مفتوح.</strong> بيتبنى قدامك من نفس الكود اللي على GitHub، وفيك تقرا السكربت قبل ما تشغّله.</span></div>
+          </div>
+
+          <section id="ar-fast">
+            <h2>السطر الواحد</h2>
+            <p>وصّل الآيفون أو الآيباد بالماك بالكابل، افتح <strong>Terminal</strong> (⌘ + مسافة واكتب Terminal)، الصق هالسطر واضغط Enter:</p>
+            <div class="cmd" dir="ltr"><code id="iosCmdAr">curl -fsSL https://devehab.github.io/coshare/install-ios.sh | bash</code><button class="copy-btn" type="button" data-copy="iosCmdAr">نسخ</button></div>
+            <p>بيمشي على ٦ مراحل، وبكل وحدة بيطبعلك ✓ أو شو لازم تعمل:</p>
+            <ol>
+              <li><strong>الماك:</strong> النظام والمساحة الفاضية.</li>
+              <li><strong>Xcode:</strong> إذا مش موجود بيفتحلك صفحته على App Store وبيستنى لحد ما يخلص التثبيت. وبيقبل رخصته ومكوّناته (بيطلب كلمة سر الماك مرة وحدة).</li>
+              <li><strong>الكود:</strong> بينزّل كود CoShare بمجلد <code dir="ltr">~/CoShare-iOS</code>، أو بيحدّثه لآخر نسخة.</li>
+              <li><strong>حساب Apple:</strong> بيلاقي حسابك بـ Xcode لحاله. وإذا ما في حساب بيفتح Xcode وبيقلّك وين تضيفه.</li>
+              <li><strong>الجهاز:</strong> بيستنى لحد ما يكون موصول، ووثقت بالماك، ووضع المطور مفعّل.</li>
+              <li><strong>البناء والتثبيت:</strong> بيبني CoShare، وبيوقّعه بحسابك، وبيثبّته وبيفتحه. وإذا صار خطأ بيقرا السبب وبيصلّح اللي بيقدر عليه وبيرجع يحاول.</li>
+            </ol>
+            <p>بدك تشوف شو بيعمل قبل ما تشغّله؟ <a href="https://github.com/Devehab/coshare/blob/main/website/install-ios.sh" rel="noopener">اقرا السكربت</a>. كله بيصير على جهازك: بينزّل الكود من GitHub و Xcode من Apple، وما في شي تاني.</p>
+          </section>
+
+          <section id="ar-need">
+            <h2>قبل ما تبدأ</h2>
+            <ul>
+              <li><strong>ماك</strong> عليه macOS بيشغّل Xcode حديث. نسخة Xcode اللي على App Store بتحتاج غالباً آخر نسختين من macOS. على ماك أقدم نزّل أحدث Xcode بيشتغل عليه (15 أو أحدث) من <a href="https://developer.apple.com/download/all" rel="noopener">صفحة مطوري Apple</a>.</li>
+              <li><strong>مساحة:</strong> حوالي ٤٠ غيغا فاضية إذا Xcode مش منزّل، أو ١٥ غيغا إذا منزّل.</li>
+              <li><strong>كابل</strong> بينقل بيانات (مش كابل شحن بس) للمرة الأولى.</li>
+              <li><strong>آيفون أو آيباد</strong> عليه iOS أو iPadOS 15 أو أحدث.</li>
+              <li><strong>Apple ID:</strong> المجاني بيكفي. الحساب المدفوع (Apple Developer Program) بيخلّي التطبيق شغّال سنة بدل ٧ أيام، وبيسمحلك تنشره على App Store.</li>
+            </ul>
+          </section>
+
+          <section id="ar-steps">
+            <h2>خطوة بخطوة: شو رح تشوف وشو تعمل</h2>
+            <h3>١. إذا ما عندك Xcode</h3>
+            <p>بيفتح App Store على صفحة Xcode: اضغط <strong>«الحصول»</strong> ثم <strong>«تثبيت»</strong>، وخلّي التيرمينال مفتوح. التنزيل بياخد عادة من ٢٠ لـ ٦٠ دقيقة، والسكربت بيكمّل لحاله أول ما يخلص. إذا طلب <strong>كلمة سر الماك</strong> لقبول رخصة Xcode اكتبها واضغط Enter. ما رح تبيّن وانت عم تكتبها، وهاد طبيعي.</p>
+            <h3>٢. ضيف حساب Apple على Xcode (مرة وحدة)</h3>
+            <p>إذا Xcode ما فيه حساب، بيفتحه السكربت. روح على <strong>Xcode ← Settings…‏ (⌘,) ← Accounts ← «+» ← Apple ID</strong>، وسجّل دخول وسكّر نافذة الإعدادات. السكربت بيلاحظ وبيكمّل.</p>
+            <h3>٣. وصّل الجهاز ووثق بالماك</h3>
+            <p>وصّل الآيفون أو الآيباد بالكابل وافتح قفله. بيطلعلك سؤال <strong>«الوثوق بهذا الكمبيوتر؟» (Trust This Computer?)</strong>: اضغط <strong>«وثوق»</strong> وأدخل رمز الجهاز.</p>
+            <h3>٤. شغّل وضع المطور (iOS 16 وأحدث)</h3>
+            <p>على الجهاز: <strong>الإعدادات ← الخصوصية والأمن ← وضع المطور (Developer Mode)</strong> بآخر الصفحة ← شغّله ← <strong>إعادة التشغيل</strong>. بعد ما يرجع يشتغل اضغط <strong>«تشغيل»</strong> وأدخل الرمز. إذا ما لقيت الخيار، خلّي الجهاز موصول والسكربت شغّال، لأنه بيبيّن بعد ما Xcode يتعرّف على الجهاز. وعلى iOS 15 ما في وضع مطور، فما بتحتاج هالخطوة.</p>
+            <h3>٥. البناء (٢–٥ دقايق أول مرة)</h3>
+            <p>أول مرة ممكن Xcode «يجهّز الجهاز للتطوير»، يعني بينسخ ملفات من الجهاز. هالشي بياخد كم دقيقة وكم غيغا، وخلّي الجهاز موصول ومفتوح القفل خلاله.</p>
+            <h3>٦. ثق بحسابك على الجهاز (أول مرة بس)</h3>
+            <p>إذا طلعلك «مطوّر غير موثوق» (Untrusted Developer): <strong>الإعدادات ← عام ← VPN وإدارة الجهاز (VPN &amp; Device Management) ← Apple Development: بريدك ← وثوق</strong>. السكربت بيفتح CoShare لحاله بعدها.</p>
+            <h3>٧. أول ما يفتح CoShare</h3>
+            <ul>
+              <li>اسمح بـ <strong>«الشبكة المحلية»</strong> وبالإشعارات.</li>
+              <li><strong>الإعدادات ← CoShare ← «اللصق من التطبيقات الأخرى» ← «السماح»</strong>، لتنبعت نسخك وهو بالخلفية.</li>
+              <li>أنشئ مجموعة، أو «انضمام لمجموعة» ← «مسح رمز QR» من جهازك التاني. وخلصت 🎉</li>
+            </ul>
+          </section>
+
+          <section id="ar-renew">
+            <h2>بعد ٧ أيام (الحساب المجاني)</h2>
+            <p>Apple بتخلّي التطبيقات اللي بتوقّعها بحساب مجاني تشتغل ٧ أيام. السكربت بيقلّك التاريخ بالزبط. قبله، أو حتى بعده، وصّل الجهاز وشغّل <strong>نفس السطر</strong> مرة تانية: بيحدّث الكود وبيعيد التوقيع بدقيقتين، ومجموعاتك وسجلّك بيضلّوا متل ما هنّي. بالحساب المدفوع المدة سنة كاملة.</p>
+            <p>الحساب المجاني بيسمح بـ ٣ تطبيقات موقّعة على الجهاز بنفس الوقت.</p>
+          </section>
+
+          <section id="ar-xcode">
+            <h2>من Xcode مباشرة (للمطورين)</h2>
+            <ol>
+              <li><code dir="ltr">git clone https://github.com/Devehab/coshare.git</code> وافتح <code dir="ltr">CoShare.xcodeproj</code>.</li>
+              <li>اختار الـ scheme <strong>CoShare iOS</strong>.</li>
+              <li><strong>Signing &amp; Capabilities:</strong> بـ Team اختار حسابك، وغيّر Bundle Identifier لشي خاص فيك (مثلاً <code dir="ltr">com.yourname.coshare</code>).</li>
+              <li>اختار جهازك من فوق، واضغط <strong>⌘R</strong>.</li>
+            </ol>
+            <p>الكود كله: <code>iOS/</code> للآيفون والآيباد، و<code>Shared/</code> للمحرّك المشترك مع الماك. والبروتوكول موثّق بـ <a href="https://github.com/Devehab/coshare/blob/main/docs/PROTOCOL.md" rel="noopener">PROTOCOL.md</a>.</p>
+          </section>
+
+          <section id="ar-store">
+            <h2>بدك تنشره على App Store؟ أهلاً وسهلاً</h2>
+            <p>CoShare مفتوح المصدر برخصة <a href="https://github.com/Devehab/coshare/blob/main/LICENSE" rel="noopener">MIT</a>، يعني <strong>من حقك تنشره على App Store</strong> بحساب المطور تبعك، بدون إذن من حدا. كل اللي بنتمناه:</p>
+            <ul>
+              <li>خلّي ملاحظة حقوق النشر بالتطبيق (صفحة «حول» بتكفي).</li>
+              <li>استعمل Bundle ID واسم خاصين فيك. «CoShare by اسمك» كتير حلو.</li>
+              <li>شيل وضع الخلفية <code>audio</code>، لأن App Review ما بيقبل الصوت الصامت اللي بيخلّي التطبيق شغّال (<code dir="ltr">iOS/BackgroundKeeper.swift</code>).</li>
+            </ul>
+            <p>ولما ينزل على المتجر <strong><a href="https://github.com/Devehab/coshare/issues/new?template=store-release.yml" rel="noopener">خبّرنا</a></strong>، وبكل سرور منحط رابطه بالموقع لينزّله الناس بضغطة وحدة. رح نكون كتير مبسوطين 💛</p>
+          </section>
+
+          <section id="ar-help">
+            <h2>مشاكل وحلولها</h2>
+            <ul>
+              <li><strong>«No Accounts» أو مشكلة توقيع:</strong> تأكد إنه حسابك موجود ومسجّل دخول بـ Xcode ← Settings ← Accounts، وشغّل السطر مرة تانية.</li>
+              <li><strong>ما في «وضع المطور» بالإعدادات:</strong> خلّي الجهاز موصول ومفتوح القفل، وافتح Xcode ← Window ← Devices and Simulators مرة. الخيار بيبيّن بعدها.</li>
+              <li><strong>«maximum App ID limit»:</strong> الحساب المجاني بيعمل لحد ١٠ معرّفات تطبيقات جديدة بالأسبوع، و٣ تطبيقات على الجهاز. احذف تطبيق قديم ثبّتته من Xcode، أو استنى كم يوم.</li>
+              <li><strong>انبنى بس ما انفتح:</strong> غالباً الجهاز كان مقفول. افتح قفله وافتح CoShare من الشاشة الرئيسية.</li>
+              <li><strong>الماك أقدم من Xcode اللي على App Store:</strong> نزّل Xcode 15 أو أحدث بيشتغل على نظامك من <a href="https://developer.apple.com/download/all" rel="noopener">developer.apple.com/download</a>، وحطه بمجلد Applications.</li>
+              <li><strong>غير هيك:</strong> السجل الكامل بـ <code dir="ltr">~/CoShare-iOS/build/install-ios.log</code>. <a href="https://github.com/Devehab/coshare/issues/new?template=bug-report.yml" rel="noopener">افتح مشكلة على GitHub</a> وحطه معها، ومنساعدك.</li>
+            </ul>
+          </section>
+        </article>
+      </div>
+    </div>
+
+    <!-- ================================ English ================================ -->
+    <div data-lang-block="en">
+      <div class="container doc-hero">
+        <span class="kicker">iPhone &amp; iPad</span>
+        <h1>CoShare on iPhone and iPad</h1>
+        <p class="lead">CoShare isn’t on the App Store yet, so you install it the way developers do: from your Mac, with your own Apple ID (a free one works). One line in Terminal does everything; this page explains what happens at each step.</p>
+        <p class="doc-meta">You need: a Mac · a cable for the iPhone or iPad · an Apple ID (free is enough) · iOS or iPadOS 15 or later</p>
+      </div>
+
+      <div class="container doc-layout">
+        <nav class="doc-toc" aria-label="Contents">
+          <strong>Contents</strong>
+          <a href="#en-fast">The one line</a>
+          <a href="#en-need">Before you start</a>
+          <a href="#en-steps">Step by step</a>
+          <a href="#en-renew">After 7 days</a>
+          <a href="#en-xcode">Straight from Xcode</a>
+          <a href="#en-store">Publishing on the App Store</a>
+          <a href="#en-help">Troubleshooting</a>
+        </nav>
+
+        <article class="doc">
+          <div class="tldr">
+            <div><svg><use href="#i-check"/></svg><span><strong>One line.</strong> Installs Xcode if it’s missing, checks everything, builds the app and opens it on your device.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>Fixes itself.</strong> When a step is missing it tells you exactly what to do, and continues as soon as you have.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>Your own account.</strong> The app is signed with your Apple ID and goes through no one else.</span></div>
+            <div><svg><use href="#i-check"/></svg><span><strong>Open source.</strong> Built in front of you from the same code that’s on GitHub. Read the script before you run it.</span></div>
+          </div>
+
+          <section id="en-fast">
+            <h2>The one line</h2>
+            <p>Plug the iPhone or iPad into your Mac, open <strong>Terminal</strong> (⌘ + Space, type Terminal), paste this line and press Return:</p>
+            <div class="cmd" dir="ltr"><code id="iosCmdEn">curl -fsSL https://devehab.github.io/coshare/install-ios.sh | bash</code><button class="copy-btn" type="button" data-copy="iosCmdEn">Copy</button></div>
+            <p>It goes through 6 stages and prints a ✓, or what you need to do, for each:</p>
+            <ol>
+              <li><strong>This Mac:</strong> the system and the free space.</li>
+              <li><strong>Xcode:</strong> if it’s missing, it opens Xcode in the App Store and waits until it’s installed. Then it accepts the license and components (your Mac password, once).</li>
+              <li><strong>The code:</strong> downloads CoShare’s source to <code dir="ltr">~/CoShare-iOS</code>, or updates it.</li>
+              <li><strong>Your Apple ID:</strong> finds your account in Xcode. If there’s none, it opens Xcode and shows where to add it.</li>
+              <li><strong>The device:</strong> waits until it’s connected, trusts this Mac and has Developer Mode on.</li>
+              <li><strong>Build and install:</strong> builds CoShare, signs it with your account, installs it and opens it. If something fails, it reads why, fixes what it can and tries again.</li>
+            </ol>
+            <p>Want to see what it does before running it? <a href="https://github.com/Devehab/coshare/blob/main/website/install-ios.sh" rel="noopener">Read the script</a>. Everything happens on your Mac: the code comes from GitHub and Xcode from Apple, nothing else.</p>
+          </section>
+
+          <section id="en-need">
+            <h2>Before you start</h2>
+            <ul>
+              <li><strong>A Mac</strong> whose macOS runs a recent Xcode. The App Store’s Xcode usually needs one of the last two macOS versions. On an older Mac, get the newest Xcode it runs (15 or later) from <a href="https://developer.apple.com/download/all" rel="noopener">Apple’s developer downloads</a>.</li>
+              <li><strong>Space:</strong> about 40 GB free if Xcode isn’t installed, 15 GB if it is.</li>
+              <li><strong>A data cable</strong> (not charge-only) for the first time.</li>
+              <li><strong>An iPhone or iPad</strong> with iOS or iPadOS 15 or later.</li>
+              <li><strong>An Apple ID:</strong> a free one is enough. A paid one (Apple Developer Program) keeps the app signed for a year instead of 7 days, and lets you publish it on the App Store.</li>
+            </ul>
+          </section>
+
+          <section id="en-steps">
+            <h2>Step by step: what you’ll see and do</h2>
+            <h3>1. If you don’t have Xcode</h3>
+            <p>The App Store opens on Xcode: click <strong>Get</strong>, then <strong>Install</strong>, and leave Terminal open. The download usually takes 20 to 60 minutes; the script continues by itself when it’s done. If it asks for your <strong>Mac password</strong> to accept Xcode’s license, type it and press Return. Nothing shows while you type; that’s normal.</p>
+            <h3>2. Add your Apple ID to Xcode (once)</h3>
+            <p>If Xcode has no account, the script opens it. Go to <strong>Xcode → Settings… (⌘,) → Accounts → + → Apple ID</strong>, sign in and close the Settings window. The script notices and carries on.</p>
+            <h3>3. Connect the device and trust the Mac</h3>
+            <p>Plug in the iPhone or iPad and unlock it. On <strong>Trust This Computer?</strong>, tap <strong>Trust</strong> and enter the device passcode.</p>
+            <h3>4. Turn on Developer Mode (iOS 16 and later)</h3>
+            <p>On the device: <strong>Settings → Privacy &amp; Security → Developer Mode</strong> (at the bottom) → on → <strong>Restart</strong>. When it’s back, tap <strong>Turn On</strong> and enter the passcode. Can’t find it? Keep the device connected while the script runs; it appears once Xcode has seen the device. iOS 15 has no Developer Mode, so skip this step.</p>
+            <h3>5. The build (2–5 minutes the first time)</h3>
+            <p>The first time, Xcode may need to “prepare the device for development”: it copies files from the device, which takes a few minutes and a few GB. Keep the device connected and unlocked meanwhile.</p>
+            <h3>6. Trust your account on the device (first time only)</h3>
+            <p>If you see <strong>Untrusted Developer</strong>: <strong>Settings → General → VPN &amp; Device Management → Apple Development: your email → Trust</strong>. The script opens CoShare by itself right after.</p>
+            <h3>7. When CoShare opens</h3>
+            <ul>
+              <li>Allow <strong>Local Network</strong> and notifications.</li>
+              <li><strong>Settings → CoShare → Paste from Other Apps → Allow</strong>, so copies are sent from the background too.</li>
+              <li>Create a group, or Join → Scan QR code from your other device. Done 🎉</li>
+            </ul>
+          </section>
+
+          <section id="en-renew">
+            <h2>After 7 days (free Apple ID)</h2>
+            <p>Apple lets apps you sign with a free account run for 7 days. The script tells you the exact date. Before then, or even after, plug the device in and run <strong>the same line</strong> again: it updates the code and signs it again in about two minutes, and your groups and history stay. With a paid account it’s a full year.</p>
+            <p>A free account can have 3 self-signed apps on a device at a time.</p>
+          </section>
+
+          <section id="en-xcode">
+            <h2>Straight from Xcode (for developers)</h2>
+            <ol>
+              <li><code>git clone https://github.com/Devehab/coshare.git</code> and open <code dir="ltr">CoShare.xcodeproj</code>.</li>
+              <li>Pick the <strong>CoShare iOS</strong> scheme.</li>
+              <li><strong>Signing &amp; Capabilities:</strong> choose your Team, and change the Bundle Identifier to one of your own (e.g. <code>com.yourname.coshare</code>).</li>
+              <li>Pick your device in the toolbar and press <strong>⌘R</strong>.</li>
+            </ol>
+            <p>The code: <code>iOS/</code> for iPhone and iPad, <code>Shared/</code> for the engine it shares with the Mac. The protocol is documented in <a href="https://github.com/Devehab/coshare/blob/main/docs/PROTOCOL.md" rel="noopener">PROTOCOL.md</a>.</p>
+          </section>
+
+          <section id="en-store">
+            <h2>Want to publish it on the App Store? Please do</h2>
+            <p>CoShare is open source under the <a href="https://github.com/Devehab/coshare/blob/main/LICENSE" rel="noopener">MIT license</a>, so <strong>you’re free to publish it on the App Store</strong> under your own developer account, no permission needed. All we ask:</p>
+            <ul>
+              <li>keep the copyright notice in the app (an About screen is enough),</li>
+              <li>use your own bundle ID and name. “CoShare by You” is great,</li>
+              <li>remove the <code>audio</code> background mode: App Review doesn’t accept the silent audio that keeps the app running (<code dir="ltr">iOS/BackgroundKeeper.swift</code>).</li>
+            </ul>
+            <p>When it’s live, <strong><a href="https://github.com/Devehab/coshare/issues/new?template=store-release.yml" rel="noopener">tell us</a></strong> and we’ll gladly link it from the website, so people can install it in one tap. It would make our day 💛</p>
+          </section>
+
+          <section id="en-help">
+            <h2>Troubleshooting</h2>
+            <ul>
+              <li><strong>“No Accounts” or a signing error:</strong> make sure your account is in Xcode → Settings → Accounts and signed in, then run the line again.</li>
+              <li><strong>No Developer Mode in Settings:</strong> keep the device connected and unlocked, and open Xcode → Window → Devices and Simulators once. The option appears after that.</li>
+              <li><strong>“maximum App ID limit”:</strong> a free account can create 10 new app IDs a week and keep 3 apps on a device. Delete an older app you installed from Xcode, or wait a few days.</li>
+              <li><strong>Built but didn’t open:</strong> the device was probably locked. Unlock it and open CoShare from the home screen.</li>
+              <li><strong>Your Mac is older than the App Store’s Xcode:</strong> download Xcode 15 or later that runs on your macOS from <a href="https://developer.apple.com/download/all" rel="noopener">developer.apple.com/download</a> and put it in Applications.</li>
+              <li><strong>Anything else:</strong> the full log is in <code>~/CoShare-iOS/build/install-ios.log</code>. <a href="https://github.com/Devehab/coshare/issues/new?template=bug-report.yml" rel="noopener">Open an issue on GitHub</a> with it and we’ll help.</li>
+            </ul>
+          </section>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <a class="brand brand-sm" href="./"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>CoShare</a>
+      <nav aria-label="Footer">
+        <a href="./" data-ar="الرئيسية" data-en="Home">الرئيسية</a>
+        <a href="privacy.html" data-ar="الخصوصية" data-en="Privacy">الخصوصية</a>
+        <a href="https://github.com/Devehab/coshare" rel="noopener" data-ar="الكود المصدري" data-en="Source code">الكود المصدري</a>
+      </nav>
+      <span>© <span id="year">2026</span> CoShare</span>
+    </div>
+  </footer>
+  <script src="doc.js"></script>
+</body>
+</html>

@@ -1,9 +1,11 @@
-// Privacy page: shares the language choice with the landing page (both blocks are in the HTML).
+// Document pages (privacy policy, iPhone guide): share the language choice with the landing page
+// (both language blocks are in the HTML; each page names its titles on <html data-title-ar/-en>).
 (function () {
   "use strict";
+  var root = document.documentElement;
   var META = {
-    ar: { title: "سياسة الخصوصية — CoShare", toggle: "English" },
-    en: { title: "Privacy Policy — CoShare", toggle: "العربية" }
+    ar: { title: root.getAttribute("data-title-ar") || document.title, toggle: "English", copied: "تم النسخ ✓", copy: "نسخ" },
+    en: { title: root.getAttribute("data-title-en") || document.title, toggle: "العربية", copied: "Copied ✓", copy: "Copy" }
   };
   function storedLang() {
     try { return localStorage.getItem("coshare.lang"); } catch (e) { return null; }
@@ -41,6 +43,27 @@
       Array.prototype.forEach.call(row.children, function (cell, i) {
         if (heads[i]) cell.setAttribute("data-label", heads[i].textContent.trim());
       });
+    });
+  });
+
+  // Copy buttons next to commands.
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var code = document.getElementById(button.getAttribute("data-copy"));
+      var done = function () {
+        button.textContent = META[lang].copied;
+        setTimeout(function () { button.textContent = META[lang].copy; }, 1800);
+      };
+      var fallback = function () {
+        var range = document.createRange();
+        range.selectNodeContents(code);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try { document.execCommand("copy"); done(); } catch (e) { /* the command stays selected */ }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code.textContent).then(done, fallback);
+      else fallback();
     });
   });
 

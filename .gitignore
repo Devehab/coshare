@@ -19,3 +19,6 @@ android/.kotlin/
 android/local.properties
 *.jks
 *.keystore
+
+# The iPhone installer's own settings (website/install-ios.sh)
+.coshare-ios
