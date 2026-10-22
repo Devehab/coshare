@@ -32,6 +32,8 @@ final class SyncEngine: ObservableObject {
     let settings: AppSettings
     let history: HistoryStore
     let log: ActivityLog
+    /// Decides when a device of my groups came in or went out (see notify).
+    let presenceWatch: PresenceWatch
 
     private let network = PeerNetwork()
     private let pasteboard: PasteboardBridge
@@ -41,6 +43,9 @@ final class SyncEngine: ObservableObject {
     private var pollTimer: Timer?
     private var maintenanceTimer: Timer?
     private var presenceTimer: Timer?
+    private var presenceTick: Timer?
+    /// False while this device has no network at all: others vanishing then is our doing, not theirs.
+    private var lanUp = true
     private var pulseTask: Task<Void, Never>?
     private var lastChangeCount = -1
     private var lastReportedProblemCount = -1
@@ -58,6 +63,7 @@ final class SyncEngine: ObservableObject {
         settings = AppSettings(defaults: environment.defaults, defaultName: DevicePlatform.defaultDeviceName)
         history = HistoryStore(directory: environment.dataDirectory, retentionHours: settings.historyRetentionHours)
         log = ActivityLog(directory: environment.dataDirectory, retentionHours: settings.historyRetentionHours)
+        presenceWatch = PresenceWatch(defaults: environment.defaults)
         if let latest = history.items.first {
             currentHash = latest.hash
             currentDate = latest.date
@@ -65,6 +71,8 @@ final class SyncEngine: ObservableObject {
         network.onPeersChanged = { [weak self] peers in self?.updatePeers(peers) }
         network.onEvent = { [weak self] text, isError in self?.log.add(text, isError: isError) }
         network.onRequest = { [weak self] message, group in self?.handle(message, group: group) }
+        network.onBye = { [weak self] deviceID, until in self?.presenceWatch.bye(deviceID, until: until) }
+        presenceWatch.onEvent = { [weak self] event in self?.notify(event) }
     }
 
     // MARK: Groups
@@ -174,6 +182,12 @@ final class SyncEngine: ObservableObject {
         }
         RunLoop.main.add(presenceCheck, forMode: .common)
         presenceTimer = presenceCheck
+        let presenceTick = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.presenceWatch.tick() }
+        }
+        RunLoop.main.add(presenceTick, forMode: .common)
+        self.presenceTick = presenceTick
+        PresenceNotifier.shared.prepare(enabled: settings.notifyDevices)
         Publishers.CombineLatest4(settings.$paused, settings.$quietEnabled, settings.$quietSchedule, settings.$resumedWindowStart)
             .dropFirst()
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
@@ -227,6 +241,13 @@ final class SyncEngine: ObservableObject {
     func restartNetwork() {
         guard isStarted, presence.isOnline else { return }
         startNetwork()
+    }
+
+    /// The computer woke up: devices drop out and come back because of us, so look again quietly.
+    func systemDidWake() {
+        guard presence.isOnline else { return }
+        presenceWatch.settle()
+        network.refreshDiscovery()
     }
 
     /// Looks for devices again without dropping the current connections.
@@ -286,6 +307,7 @@ final class SyncEngine: ObservableObject {
     /// no probes, no clipboard reading until it's time to come back.
     private func goOffline(_ state: NetworkPresence) {
         log.add(offlineMessage(state))
+        presenceWatch.reset()
         networkGeneration += 1
         let targets = connectedPeers
         var until: Date?
@@ -313,6 +335,8 @@ final class SyncEngine: ObservableObject {
 
     private func startNetwork() {
         guard presence.isOnline else { return }
+        // Devices are about to drop out and come back because of us: don't report any of it.
+        presenceWatch.settle()
         networkGeneration += 1
         let generation = networkGeneration
         let trimmedName = settings.deviceName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -335,6 +359,8 @@ final class SyncEngine: ObservableObject {
 
     private func networkPathChanged(_ signature: String) {
         defer { lastPathSignature = signature }
+        lanUp = signature != "offline"
+        if !lanUp { presenceWatch.reset() }
         guard presence.isOnline, let last = lastPathSignature, last != signature, signature != "offline" else { return }
         log.add("تغيّرت الشبكة — إعادة الاتصال")
         restartNetwork()
@@ -357,6 +383,27 @@ final class SyncEngine: ObservableObject {
         let joined = nowConnected.filter { !oldConnected.contains($0.id) }
         if !joined.isEmpty {
             Task { await pullLatest(from: joined) }
+        }
+        if lanUp {
+            let mine = identity?.groups ?? []
+            presenceWatch.update(nowConnected.map { peer in
+                PresenceWatch.Member(id: peer.id, name: peer.name, groups: mine.filter { Self.peer(peer, isIn: $0) }
+                    .map { PresenceWatch.GroupRef(id: $0.id, name: $0.membership.name) })
+            })
+        }
+    }
+
+    /// Shows a "came in" / "went out" notification if the person wants that kind.
+    private func notify(_ event: PresenceWatch.Event) {
+        guard settings.notifyDevices else { return }
+        switch event.kind {
+        case .joined, .back: guard settings.notifyJoins else { return }
+        case .left: guard settings.notifyLeaves else { return }
+        }
+        let (title, body) = PresenceNotifier.text(for: event, use24Hour: settings.use24Hour)
+        log.add("🔔 \(title) — \(body)")
+        PresenceNotifier.shared.post(event, use24Hour: settings.use24Hour) { [weak self] problem in
+            self?.log.add("تعذّر إظهار الإشعار: \(problem)", isError: true)
         }
     }
 

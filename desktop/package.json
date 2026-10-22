@@ -9,7 +9,7 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/protocol.test.js test/engine.test.js",
+    "test": "node --test test/protocol.test.js test/engine.test.js test/presence.test.js",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "natives": "node scripts/natives.js"

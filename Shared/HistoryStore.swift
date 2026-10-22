@@ -222,6 +222,10 @@ final class AppSettings: ObservableObject {
     @Published var resumedWindowStart: Date? { didSet { defaults.set(resumedWindowStart, forKey: Keys.resumedWindowStart) } }
     /// Times as 15:45 instead of 3:45 PM (12-hour is the default).
     @Published var use24Hour: Bool { didSet { defaults.set(use24Hour, forKey: Keys.use24Hour) } }
+    /// Notify when a device of my groups comes in or goes out (each kind can be switched off).
+    @Published var notifyDevices: Bool { didSet { defaults.set(notifyDevices, forKey: Keys.notifyDevices) } }
+    @Published var notifyJoins: Bool { didSet { defaults.set(notifyJoins, forKey: Keys.notifyJoins) } }
+    @Published var notifyLeaves: Bool { didSet { defaults.set(notifyLeaves, forKey: Keys.notifyLeaves) } }
     /// How long history (and copied images) is kept: 1 hour up to a week, a day by default.
     @Published var historyRetentionHours: Int {
         didSet {
@@ -247,12 +251,16 @@ final class AppSettings: ObservableObject {
         static let resumedWindowStart = "resumedWindowStart"
         static let use24Hour = "use24Hour"
         static let historyRetentionHours = "historyRetentionHours"
+        static let notifyDevices = "notifyDevices"
+        static let notifyJoins = "notifyJoins"
+        static let notifyLeaves = "notifyLeaves"
     }
 
     init(defaults: UserDefaults, defaultName: String) {
         self.defaults = defaults
         defaults.register(defaults: [Keys.syncImages: true, Keys.keepAlive: true, Keys.skipConcealed: true, Keys.showInDock: true,
-                                      Keys.historyRetentionHours: HistoryRetention.defaultHours])
+                                      Keys.historyRetentionHours: HistoryRetention.defaultHours,
+                                      Keys.notifyDevices: true, Keys.notifyJoins: true, Keys.notifyLeaves: true])
         if let id = defaults.string(forKey: Keys.deviceID) {
             deviceID = id
         } else {
@@ -275,5 +283,8 @@ final class AppSettings: ObservableObject {
         _resumedWindowStart = Published(initialValue: defaults.object(forKey: Keys.resumedWindowStart) as? Date)
         _use24Hour = Published(initialValue: defaults.bool(forKey: Keys.use24Hour))
         _historyRetentionHours = Published(initialValue: HistoryRetention.clamp(defaults.integer(forKey: Keys.historyRetentionHours)))
+        _notifyDevices = Published(initialValue: defaults.bool(forKey: Keys.notifyDevices))
+        _notifyJoins = Published(initialValue: defaults.bool(forKey: Keys.notifyJoins))
+        _notifyLeaves = Published(initialValue: defaults.bool(forKey: Keys.notifyLeaves))
     }
 }

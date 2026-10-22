@@ -46,6 +46,8 @@ final class PeerNetwork: @unchecked Sendable {
     var onPeersChanged: (@MainActor ([Peer]) -> Void)?
     var onRequest: (@MainActor (WireMessage, GroupSecret) async -> WireMessage?)?
     var onEvent: (@MainActor (String, Bool) -> Void)?
+    /// A device said bye: quiet until the date, or paused when there is none.
+    var onBye: (@MainActor (String, Date?) -> Void)?
 
     private let queue = DispatchQueue(label: "coshare.network", qos: .userInitiated)
     private var listener: NWListener?
@@ -60,9 +62,19 @@ final class PeerNetwork: @unchecked Sendable {
     private var browsedPeers: [String: Peer] = [:]
     private var probedPeers: [String: Peer] = [:]
     private var directPeers: [String: (peer: Peer, seen: Date)] = [:]
+    /// Last time each device answered us or called us (hello, clip, anything we could decrypt).
+    private var lastContact: [String: Date] = [:]
+    /// When each device listed by Bonjour first showed up (this session).
+    private var firstSeen: [String: Date] = [:]
+    /// A device of our groups that hasn't been heard from for this long is gone, even if Bonjour
+    /// still lists it (it keeps a vanished device for a long time when Wi-Fi drops or it sleeps).
+    private static let liveness: TimeInterval = 60
     /// Devices that said "bye, quiet until …", and the addresses they said it from.
     private var silenced: [String: Date] = [:]
     private var silencedAddresses: [String: (deviceID: String, until: Date)] = [:]
+    /// When each device said bye. Its goodbye takes a moment to reach Bonjour, so an advertisement
+    /// seen right after is the old one, not the device coming back (a hello still is).
+    private var byeAt: [String: Date] = [:]
     private var generation = 0
     private let lock = NSLock()
     private var _identity: LocalIdentity?
@@ -118,13 +130,14 @@ final class PeerNetwork: @unchecked Sendable {
 
     /// Connects to a peer, sends one frame sealed with `key` and waits for its reply.
     func exchange(_ frame: Data, key: GroupKey, with peer: Peer, timeout: TimeInterval) async throws -> WireMessage {
-        let connection = NWConnection(to: peer.endpoint, using: Self.parameters())
+        let connection = NWConnection(to: peer.endpoint, using: Self.parameters(for: peer.endpoint))
         let framed = FramedConnection(connection, queue: queue, timeout: timeout)
         defer { connection.cancel() }
         try await framed.open()
         rememberAddress(of: peer.id, from: connection)
         try await framed.send(frame)
         let reply = try await framed.receiveFrame()
+        markContact(peer.id)
         return try WireMessage(sealed: reply, using: key)
     }
 
@@ -205,6 +218,7 @@ final class PeerNetwork: @unchecked Sendable {
             // Anything we can't decrypt (another group, a stranger, a port scan) is dropped silently.
             guard let sealed = try? await framed.receiveFrame(), let opened = me.open(sealed) else { return }
             let (request, group) = opened
+            if request.header.type != .bye { markContact(request.header.senderID) }
             do {
                 let reply: WireMessage?
                 if request.header.type == .hello {
@@ -299,6 +313,7 @@ final class PeerNetwork: @unchecked Sendable {
             if name == me.id || txt["i"] == me.id || name.hasPrefix(me.id + " (") { continue }
             let groups = (0..<8).compactMap { txt["g\($0)"].flatMap(AdvertisedGroup.init(txtValue:)) }
             let id = txt["i"] ?? name
+            if let said = byeAt[id], Date().timeIntervalSince(said) < 10 { continue }
             let quiet = txt["q"].flatMap(QuietSchedule.init(txtValue:))
             byID[id] = Peer(id: id, name: txt["n"] ?? name, platform: DevicePlatform(rawValue: txt["p"] ?? "") ?? .other,
                             groups: groups, endpoint: result.endpoint, isDirect: false, quiet: quiet)
@@ -321,7 +336,7 @@ final class PeerNetwork: @unchecked Sendable {
     private func runDirectProbe() {
         guard let me = identity, !me.groups.isEmpty else { return }
         let gen = generation
-        let known = knownHosts()
+        let known = knownHosts().filter { !Self.isUnscopedLinkLocal($0.value) }
         // Never call a device during its quiet hours (or after it said bye): even a refused
         // connection would show up as traffic on a monitored work computer.
         let quietHosts = Set(known.filter { isQuiet($0.key) }.values)
@@ -332,11 +347,18 @@ final class PeerNetwork: @unchecked Sendable {
         for host in hosts {
             Task { await self.sayHello(to: host, me: me, gen: gen) }
         }
+        // Group devices Bonjour lists but we haven't heard from lately: greet them where Bonjour says
+        // they are. An answer keeps them listed (see isAlive) and teaches us their address.
+        let quietSince = now.addingTimeInterval(-20)
+        for peer in bonjourPeers().values where !isQuiet(peer.id) && (lastContact[peer.id] ?? .distantPast) < quietSince {
+            let keys = me.groups.filter { group in peer.groups.contains { $0.id == group.id && $0.tag == group.key.tag } }
+            guard !keys.isEmpty else { continue }
+            Task { await self.hello(peer.endpoint, keys: keys, address: nil, me: me, gen: gen) }
+        }
         // Forget direct peers that stopped answering.
         let cutoff = Date().addingTimeInterval(-50)
-        let before = directPeers.count
         directPeers = directPeers.filter { $0.value.seen > cutoff }
-        if directPeers.count != before { publishMerged() }
+        publishMerged()
     }
 
     private func sayHello(to address: String, me: LocalIdentity, gen: Int) async {
@@ -345,27 +367,39 @@ final class PeerNetwork: @unchecked Sendable {
         let (host, port) = parts.count == 2 && UInt16(parts[1]) != nil
             ? (String(parts[0]), UInt16(parts[1])!) : (address, Self.preferredPort)
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!)
-        for group in me.groups {
-            let connection = NWConnection(to: endpoint, using: Self.parameters())
+        await hello(endpoint, keys: me.groups, address: address, me: me, gen: gen)
+    }
+
+    /// Greets one endpoint with each key in turn until one is understood. `address` is set for
+    /// direct contact (the device then becomes a direct peer); nil for a device found by Bonjour.
+    private func hello(_ endpoint: NWEndpoint, keys: [GroupSecret], address: String?, me: LocalIdentity, gen: Int) async {
+        for group in keys {
+            let connection = NWConnection(to: endpoint, using: Self.parameters(for: endpoint))
             let framed = FramedConnection(connection, queue: queue, timeout: 4)
             defer { connection.cancel() }
             // Nothing listening there (a normal router): stop. Connected but the other side couldn't
             // decrypt (it's in another group): try our next group's key.
             do { try await framed.open() } catch { return }
+            let remote = connection.currentPath?.remoteEndpoint
             do {
                 try await framed.send(helloMessage(me).frame(using: group.key))
                 let reply = try WireMessage(sealed: try await framed.receiveFrame(), using: group.key)
                 guard reply.header.type == .hello, reply.header.senderID != me.id else { return }
+                let id = reply.header.senderID
                 queue.async { [self] in
                     guard gen == generation else { return }
-                    let isNew = directPeers[reply.header.senderID] == nil
-                    unsilence(reply.header.senderID)
-                    saveSchedule(reply.header.quiet, for: reply.header.senderID)
-                    directPeers[reply.header.senderID] = (Peer(id: reply.header.senderID, name: reply.header.senderName,
-                                                              platform: reply.header.platform, groups: reply.header.groups ?? [],
-                                                              endpoint: endpoint, isDirect: true, quiet: reply.header.quiet), Date())
-                    saveKnownHost(address, for: reply.header.senderID)
-                    if isNew { publishMerged() }
+                    lastContact[id] = Date()
+                    unsilence(id)
+                    saveSchedule(reply.header.quiet, for: id)
+                    if let address {
+                        directPeers[id] = (Peer(id: id, name: reply.header.senderName, platform: reply.header.platform,
+                                                groups: reply.header.groups ?? [], endpoint: endpoint, isDirect: true,
+                                                quiet: reply.header.quiet), Date())
+                        saveKnownHost(address, for: id)
+                    } else if case let .hostPort(host, _)? = remote {
+                        saveKnownHost("\(host)".components(separatedBy: "%").first ?? "\(host)", for: id)
+                    }
+                    publishMerged()
                 }
                 return
             } catch {
@@ -383,6 +417,7 @@ final class PeerNetwork: @unchecked Sendable {
         let hostString = "\(host)".components(separatedBy: "%").first ?? "\(host)"
         queue.async { [self] in
             let isNew = directPeers[header.senderID] == nil
+            lastContact[header.senderID] = Date()
             unsilence(header.senderID)
             saveSchedule(header.quiet, for: header.senderID)
             directPeers[header.senderID] = (Peer(id: header.senderID, name: header.senderName, platform: header.platform,
@@ -394,6 +429,10 @@ final class PeerNetwork: @unchecked Sendable {
         }
     }
 
+    private func markContact(_ deviceID: String) {
+        queue.async { [self] in lastContact[deviceID] = Date() }
+    }
+
     private func rememberAddress(of peerID: String, from connection: NWConnection) {
         guard case let .hostPort(host, _)? = connection.currentPath?.remoteEndpoint else { return }
         let hostString = "\(host)".components(separatedBy: "%").first ?? "\(host)"
@@ -402,7 +441,11 @@ final class PeerNetwork: @unchecked Sendable {
 
     private func silence(_ deviceID: String, until: Date?, name: String, from remote: NWEndpoint, listenPort: UInt16?) {
         queue.async { [self] in
+            // Reported before the device drops out of the list, so its "out" can say why.
+            let said = until
+            Task { @MainActor [weak self] in self?.onBye?(deviceID, said) }
             let until = until ?? Date().addingTimeInterval(12 * 3600)
+            byeAt[deviceID] = Date()
             silenced[deviceID] = until
             // Also its address, in case we only know it as an address (gateway, not yet greeted).
             if case let .hostPort(host, _) = remote {
@@ -419,6 +462,7 @@ final class PeerNetwork: @unchecked Sendable {
     }
 
     private func unsilence(_ deviceID: String) {
+        byeAt.removeValue(forKey: deviceID)
         silenced.removeValue(forKey: deviceID)
         silencedAddresses = silencedAddresses.filter { $0.value.deviceID != deviceID }
     }
@@ -444,6 +488,8 @@ final class PeerNetwork: @unchecked Sendable {
     private func saveKnownHost(_ host: String, for deviceID: String) {
         let isLoopback = host.hasPrefix("127.") || host == "::1"
         if isLoopback && AppEnvironment.current.extraHosts.isEmpty { return }
+        // fe80:: means nothing without the interface it belongs to: calling it later always fails.
+        if Self.isUnscopedLinkLocal(host) { return }
         var hosts = knownHosts()
         guard hosts[deviceID] != host else { return }
         hosts[deviceID] = host
@@ -453,11 +499,34 @@ final class PeerNetwork: @unchecked Sendable {
 
     // MARK: Helpers
 
+    private func bonjourPeers() -> [String: Peer] {
+        var peers = probedPeers
+        for (id, peer) in browsedPeers { peers[id] = peer }
+        return peers
+    }
+
+    /// A device of one of our groups is listed only while it answers: a minute from when it showed up
+    /// or was last heard from. Devices of other groups are only shown as "nearby", so Bonjour is enough.
+    private func isAlive(_ peer: Peer, now: Date) -> Bool {
+        guard let me = identity,
+              peer.groups.contains(where: { g in me.groups.contains { $0.id == g.id && $0.key.tag == g.tag } })
+        else { return true }
+        let heard = max(lastContact[peer.id] ?? .distantPast, firstSeen[peer.id] ?? .distantPast)
+        return now.timeIntervalSince(heard) < Self.liveness
+    }
+
+    private static func isUnscopedLinkLocal(_ host: String) -> Bool {
+        host.lowercased().hasPrefix("fe80:") && !host.contains("%")
+    }
+
     private func publishMerged() {
+        let now = Date()
+        let bonjour = bonjourPeers()
+        for id in bonjour.keys where firstSeen[id] == nil { firstSeen[id] = now }
+        firstSeen = firstSeen.filter { bonjour[$0.key] != nil }
         // A device that said bye stays out until it is back (advertises or says hello again).
-        var merged: [String: Peer] = directPeers.filter { (silenced[$0.key] ?? .distantPast) <= Date() }.mapValues(\.peer)
-        for (id, peer) in probedPeers { merged[id] = peer }
-        for (id, peer) in browsedPeers { merged[id] = peer }
+        var merged: [String: Peer] = directPeers.filter { (silenced[$0.key] ?? .distantPast) <= now }.mapValues(\.peer)
+        for (id, peer) in bonjour where isAlive(peer, now: now) { merged[id] = peer }
         if let me = identity { merged.removeValue(forKey: me.id) }
         publish(merged.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
     }
@@ -474,6 +543,8 @@ final class PeerNetwork: @unchecked Sendable {
         browsedPeers = [:]
         probedPeers = [:]
         directPeers = [:]
+        lastContact = [:]
+        firstSeen = [:]
     }
 
     private func publish(_ peers: [Peer]) {
@@ -490,6 +561,17 @@ final class PeerNetwork: @unchecked Sendable {
         if let tcp = parameters.defaultProtocolStack.transportProtocol as? NWProtocolTCP.Options {
             tcp.noDelay = true
             tcp.connectionTimeout = 5
+        }
+        return parameters
+    }
+
+    /// For calling out. A Bonjour name resolves to IPv6 link-local first, an address that can't be
+    /// called again without its interface: IPv4 gives an address worth remembering (hotspots, and
+    /// finding a device again within seconds after a network change).
+    private static func parameters(for endpoint: NWEndpoint) -> NWParameters {
+        let parameters = parameters()
+        if case .service = endpoint, let ip = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
+            ip.version = .v4
         }
         return parameters
     }

@@ -40,6 +40,8 @@ final class AppLifecycle {
         case .active:
             keeper.endGracePeriod()
             keeper.applySetting()
+            // The person may have switched notifications on or off in Settings meanwhile.
+            PresenceNotifier.shared.refreshStatus()
             if suspendedWithoutKeepAlive {
                 // iOS froze our sockets while we were suspended.
                 suspendedWithoutKeepAlive = false

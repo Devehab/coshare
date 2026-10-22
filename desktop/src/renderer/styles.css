@@ -140,6 +140,8 @@ button.danger-outline { color: var(--red); border-color: color-mix(in srgb, var(
 
 .field { display: grid; gap: 6px; color: var(--muted); font-size: 12.5px; margin: 6px 0 12px; }
 .toggle { display: flex; gap: 8px; align-items: center; margin: 10px 0; cursor: pointer; }
+.sub { padding-inline-start: 26px; }
+.card .toggle:first-child { margin-top: 0; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 10px 0; }
 .days button { padding: 6px 0; font-size: 12px; border-radius: 999px; }
 .days button.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }

@@ -58,6 +58,10 @@ class Settings {
       peerSchedules: {},
       use24Hour: false,
       historyRetentionHours: RETENTION.defaultHours,
+      notifyDevices: true,
+      notifyJoins: true,
+      notifyLeaves: true,
+      knownMembers: {},
       ...saved,
     };
     this.data.historyRetentionHours = RETENTION.clamp(this.data.historyRetentionHours);

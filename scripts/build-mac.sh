@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds CoShare.app for macOS without Xcode (Command Line Tools are enough).
-# Universal binary (Apple Silicon + Intel), macOS 13 Ventura or newer.
+# Universal binary (Apple Silicon + Intel), macOS 12 Monterey or newer.
 #
 #   scripts/build-mac.sh            → build/CoShare.app and build/CoShare-mac.zip
 #   scripts/build-mac.sh --install  → also copies it to /Applications and launches it

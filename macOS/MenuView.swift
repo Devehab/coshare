@@ -246,6 +246,18 @@ private struct MacSettingsView: View {
                     TimeFormatPicker().pickerStyle(.menu)
                 }
                 Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    DeviceNotificationToggles {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    DeviceNotificationNote()
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Divider()
                 Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)
                 Toggle("تجاهل كلمات السر المنسوخة من مدير كلمات السر", isOn: $settings.skipConcealed)
                 Toggle("إظهار CoShare في الـ Dock", isOn: $settings.showInDock)

@@ -5,6 +5,7 @@ const { EventEmitter } = require('events');
 const P = require('./protocol');
 const { PeerNetwork } = require('./network');
 const { Settings, History, ActivityLog, RETENTION } = require('./store');
+const { PresenceWatch, presenceText } = require('./presence');
 
 const MAX_IMAGE_BYTES = 40 * 1024 * 1024;
 const MIN_PASSWORD = 6;
@@ -28,6 +29,10 @@ class SyncEngine extends EventEmitter {
     this.network.on('peers', (peers) => this.updatePeers(peers));
     this.network.on('event', (text, isError) => this.log.add(text, isError));
     this.network.onRequest = (message, group) => this.handle(message, group);
+    // Decides when a device of my groups came in or went out (see notifyPresence).
+    this.presenceWatch = new PresenceWatch(this.settings);
+    this.presenceWatch.onEvent = (event) => this.notifyPresence(event);
+    this.network.on('bye', (id, until) => this.presenceWatch.bye(id, until));
     this.peers = [];
     this.identity = null;
     this.keyCache = new Map();
@@ -56,6 +61,7 @@ class SyncEngine extends EventEmitter {
     if (this.isOnline()) this.startNetwork(); else this.log.add(this.offlineMessage(this.presence));
     this.timers.push(setInterval(() => this.pollNow(), 400));
     this.timers.push(setInterval(() => this.updatePresence(), 15000));
+    this.timers.push(setInterval(() => this.presenceWatch.tick(), 5000));
     // Every minute, so even a one-hour retention is kept to the minute.
     this.timers.push(setInterval(() => { if (this.history.purge()) this.changed(); this.log.purge(); }, 60000));
   }
@@ -71,6 +77,8 @@ class SyncEngine extends EventEmitter {
 
   async startNetwork() {
     if (!this.isOnline()) return;
+    // Devices are about to drop out and come back because of us: don't report any of it.
+    this.presenceWatch.settle();
     const gen = ++this.netGeneration;
     const groups = [];
     for (const membership of this.settings.get('groups')) {
@@ -128,6 +136,7 @@ class SyncEngine extends EventEmitter {
   /** Tells the group "quiet until …" once, then closes every socket. */
   async goOffline(next) {
     this.log.add(this.offlineMessage(next));
+    this.presenceWatch.reset();
     this.netGeneration++;
     const targets = this.connectedPeers();
     if (this.identity && targets.length) {
@@ -161,14 +170,15 @@ class SyncEngine extends EventEmitter {
   pause() { this.settings.set('paused', true); this.updatePresence(); }
 
   setSetting(key, value) {
-    const allowed = ['deviceName', 'syncImages', 'quietEnabled', 'quietSchedule', 'launchAtLogin', 'use24Hour', 'historyRetentionHours'];
+    const allowed = ['deviceName', 'syncImages', 'quietEnabled', 'quietSchedule', 'launchAtLogin', 'use24Hour', 'historyRetentionHours',
+      'notifyDevices', 'notifyJoins', 'notifyLeaves'];
     if (!allowed.includes(key)) return;
     if (key === 'historyRetentionHours') {
       value = RETENTION.clamp(value);
       this.history.setRetention(value);
       this.log.setRetention(value);
     }
-    if (key === 'use24Hour') value = !!value;
+    if (['use24Hour', 'notifyDevices', 'notifyJoins', 'notifyLeaves'].includes(key)) value = !!value;
     this.settings.set(key, value);
     if (key === 'quietEnabled' || key === 'quietSchedule') {
       const before = this.isOnline();
@@ -278,7 +288,26 @@ class SyncEngine extends EventEmitter {
     // A device that just (re)joined may hold something copied while we couldn't see each other.
     const joined = now.filter((p) => !oldIDs.has(p.id));
     if (joined.length) this.pullLatest(joined);
+    const mine = this.identity ? this.identity.groups : [];
+    this.presenceWatch.update(now.map((p) => ({ id: p.id, name: p.name,
+      groups: mine.filter((g) => p.groups.some((x) => x.id === g.id && x.tag === g.tag)).map((g) => ({ id: g.id, name: g.name })) })));
     this.changed();
+  }
+
+  /** The computer woke up: devices drop out and come back because of us, so look again quietly. */
+  systemDidWake() {
+    if (!this.isOnline()) return;
+    this.presenceWatch.settle();
+    this.network.refreshDiscovery();
+  }
+
+  /** Emits 'presence' ({ kind, title, body }) when the person wants that kind of notification. */
+  notifyPresence(event) {
+    if (!this.settings.get('notifyDevices')) return;
+    if (event.kind === 'left' ? !this.settings.get('notifyLeaves') : !this.settings.get('notifyJoins')) return;
+    const text = presenceText(event, this.settings.get('use24Hour'));
+    this.log.add(`🔔 ${text.title} — ${text.body}`);
+    this.emit('presence', { ...event, ...text });
   }
 
   // ------------------------------------------------------------------ local clipboard → devices
@@ -451,6 +480,9 @@ class SyncEngine extends EventEmitter {
         launchAtLogin: this.settings.get('launchAtLogin'),
         use24Hour: this.settings.get('use24Hour'),
         historyRetentionHours: this.settings.get('historyRetentionHours'),
+        notifyDevices: this.settings.get('notifyDevices'),
+        notifyJoins: this.settings.get('notifyJoins'),
+        notifyLeaves: this.settings.get('notifyLeaves'),
       },
       platform: this.platform,
     };

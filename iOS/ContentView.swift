@@ -257,6 +257,19 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    DeviceNotificationToggles {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                } header: {
+                    Text("الإشعارات")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        DeviceNotificationNote()
+                        Text("على الآيفون الإشعارات بتشتغل طول ما CoShare شغّال، فخلّي «العمل الدائم بالخلفية» مفعّل.")
+                    }
+                }
+
+                Section {
                     Toggle("العمل الدائم بالخلفية", isOn: $settings.keepAlive)
                         .onValueChange(of: settings.keepAlive) { _ in keeper.applySetting() }
                     Toggle("مزامنة الصور ولقطات الشاشة", isOn: $settings.syncImages)

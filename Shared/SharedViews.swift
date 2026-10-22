@@ -176,6 +176,40 @@ struct TimeFormatPicker: View {
     }
 }
 
+/// Notify when a device of my groups comes in or goes out; each kind has its own switch.
+struct DeviceNotificationToggles: View {
+    @EnvironmentObject private var settings: AppSettings
+    @ObservedObject private var notifier = PresenceNotifier.shared
+    /// Opens this app's notification settings in the system (shown when they are turned off there).
+    let openSystemSettings: () -> Void
+
+    var body: some View {
+        Group {
+            Toggle("إشعارات الأجهزة", isOn: $settings.notifyDevices)
+                .onValueChange(of: settings.notifyDevices) { on in notifier.prepare(enabled: on) }
+            if settings.notifyDevices {
+                Toggle("لما يدخل جهاز (ينضم أو يرجع متصل)", isOn: $settings.notifyJoins)
+                Toggle("لما يطلع جهاز (ينقطع أو يوقّف)", isOn: $settings.notifyLeaves)
+                if notifier.status == .denied {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("الإشعارات مسكّرة لـ CoShare من إعدادات النظام.")
+                            .foregroundColor(.red)
+                        Button("فتح إعدادات الإشعارات", action: openSystemSettings)
+                    }
+                }
+            }
+        }
+        .onAppear { notifier.refreshStatus() }
+    }
+}
+
+/// "You get a notification when …" — shared footer for the notification switches.
+struct DeviceNotificationNote: View {
+    var body: some View {
+        Text("بيوصلك إشعار لما جهاز من مجموعاتك يتصل أو ينقطع، ومعه السبب إذا معروف. الجهاز اللي بينقطع وبيرجع خلال ثواني ما بيعمل إشعار.")
+    }
+}
+
 /// A device in a group: icon, name, what it is and how it's connected.
 struct DeviceRow: View {
     let symbol: String

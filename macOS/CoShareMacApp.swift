@@ -70,6 +70,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let engine = SyncEngine.shared
         engine.start()
+        // After sleep every device looks gone for a moment; that's this Mac's doing, not theirs.
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in SyncEngine.shared.systemDidWake() }
+        }
         if DevSnapshots.isRequested {
             Task { await DevSnapshots.run() }
             return

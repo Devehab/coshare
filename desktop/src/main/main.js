@@ -1,6 +1,6 @@
 'use strict';
 // CoShare for Windows and Linux: tray app + window around the shared sync engine.
-const { app, BrowserWindow, Tray, Menu, nativeImage, nativeTheme, ipcMain, shell, protocol, net, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, nativeTheme, ipcMain, shell, protocol, net, session, Notification, powerMonitor } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -23,6 +23,9 @@ if (isLinux) {
 // Own data folder (on a Mac used for development, "CoShare" already belongs to the native app).
 if (process.env.COSHARE_DATA) app.setPath('userData', process.env.COSHARE_DATA);
 else if (process.platform === 'darwin') app.setPath('userData', path.join(app.getPath('appData'), 'CoShare Desktop'));
+
+// Windows shows notifications only for an app with this ID (the installer's shortcut carries the same one).
+if (isWindows) app.setAppUserModelId('com.ehabk.coshare');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'coshare-blob', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
@@ -247,6 +250,14 @@ if (!selfTest && !quickCheck && !app.requestSingleInstanceLock()) {
       if (win && !win.isDestroyed()) win.webContents.send('state-changed');
     });
     updateTrayMenu();
+    // "Device in / out", when the person wants it (Settings → notifications).
+    engine.on('presence', ({ title, body }) => {
+      if (!Notification.isSupported()) return;
+      const notification = new Notification({ title, body, icon: path.join(ASSETS, 'icon.png') });
+      notification.on('click', showWindow);
+      notification.show();
+    });
+    powerMonitor.on('resume', () => engine.systemDidWake());
     engine.start();
   });
   app.on('before-quit', () => { quitting = true; if (engine) engine.stop(); });

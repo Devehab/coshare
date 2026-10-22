@@ -10,6 +10,9 @@ const { Bonjour } = require('bonjour-service');
 const P = require('./protocol');
 
 const PREFERRED_PORT = 47331;
+/** A device of our groups that hasn't been heard from for this long is gone, even if Bonjour still
+ *  lists it (a vanished device stays in its cache for a long time when Wi-Fi drops or it sleeps). */
+const LIVENESS = 60000;
 
 /** Reads exactly one length-prefixed frame body from a socket. */
 function readFrame(socket, timeoutMs) {
@@ -42,6 +45,8 @@ function readFrame(socket, timeoutMs) {
 
 const cleanAddress = (address) => String(address || '').replace(/^::ffff:/, '').split('%')[0];
 const isLoopback = (host) => host.startsWith('127.') || host === '::1';
+/** fe80:: means nothing without the interface it belongs to (which cleanAddress drops). */
+const isLinkLocal = (host) => /^fe80:/i.test(host);
 
 /** Default IPv4 gateways — on a phone's hotspot that is the phone itself. */
 function readGateways() {
@@ -86,6 +91,11 @@ class PeerNetwork extends EventEmitter {
     this.direct = new Map();    // id → { peer, seen }
     this.silenced = new Map();  // id → until (ms)
     this.silencedAddresses = new Map(); // "host" / "host:port" → { id, until }
+    // When each device said bye. Its goodbye takes a moment to reach Bonjour, so an advertisement seen
+    // right after is the old one, not the device coming back (a hello still is).
+    this.byeAt = new Map();
+    this.lastContact = new Map(); // id → last time it answered us or called us (ms)
+    this.firstSeen = new Map();   // id → when Bonjour first listed it (ms)
     this.generation = 0;
   }
 
@@ -112,6 +122,8 @@ class PeerNetwork extends EventEmitter {
     if (this.server) { try { this.server.close(); } catch {} this.server = null; }
     this.browsed.clear();
     this.direct.clear();
+    this.lastContact.clear();
+    this.firstSeen.clear();
     if (publishEmpty) this.emit('peers', []);
   }
 
@@ -158,6 +170,7 @@ class PeerNetwork extends EventEmitter {
     if (!opened) return socket.destroy();
     const { message, group } = opened;
     const { header } = message;
+    if (header.type !== 'bye') this.lastContact.set(header.senderID, Date.now());
     try {
       let reply = null;
       if (header.type === 'hello') {
@@ -205,7 +218,9 @@ class PeerNetwork extends EventEmitter {
           const body = await readFrame(socket, timeoutMs);
           clearTimeout(timer);
           socket.end();
-          resolve(P.decodeFrame(key, body));
+          const reply = P.decodeFrame(key, body);
+          if (peer.id) this.lastContact.set(peer.id, Date.now());
+          resolve(reply);
         } catch (error) {
           clearTimeout(timer);
           socket.destroy();
@@ -251,6 +266,7 @@ class PeerNetwork extends EventEmitter {
       if (String(txt.v) !== '2') continue;
       const id = String(txt.i || service.name);
       if (id === me.id || String(service.name).startsWith(me.id)) continue;
+      if (Date.now() - (this.byeAt.get(id) || 0) < 10000) continue;
       const addresses = (service.addresses || []).map(cleanAddress);
       const host = addresses.find((a) => net.isIPv4(a)) || addresses[0] || cleanAddress(service.referer && service.referer.address);
       if (!host) continue;
@@ -285,16 +301,38 @@ class PeerNetwork extends EventEmitter {
     const me = this.identity;
     if (!me || !me.groups.length || !this.listenPort) return;
     const gen = this.generation;
-    const known = this.store.get('knownHosts') || {};
+    const known = Object.fromEntries(Object.entries(this.store.get('knownHosts') || {}).filter(([, host]) => !isLinkLocal(host)));
     const now = Date.now();
     // Never call a device during its quiet hours (or after it said bye).
     const quietHosts = new Set(Object.entries(known).filter(([id]) => this.isQuiet(id)).map(([, host]) => host));
     for (const [address, info] of this.silencedAddresses) if (info.until > now) quietHosts.add(address);
     const hosts = new Set([...this.gateways, ...Object.values(known), ...this.extraHosts]);
     for (const host of hosts) if (!quietHosts.has(host)) this.sayHello(host, me, gen);
-    let changed = false;
-    for (const [id, entry] of this.direct) if (now - entry.seen > 50000) { this.direct.delete(id); changed = true; }
-    if (changed) this.publishMerged();
+    // Group devices Bonjour lists but we haven't heard from lately: greet them where Bonjour says they
+    // are. An answer keeps them listed (see isAlive) and teaches us their address.
+    for (const peer of this.browsed.values()) {
+      if (this.isQuiet(peer.id) || now - (this.lastContact.get(peer.id) || 0) < 20000) continue;
+      const keys = me.groups.filter((g) => peer.groups.some((x) => x.id === g.id && x.tag === g.tag));
+      if (keys.length) this.greet(peer, keys, me, gen);
+    }
+    for (const [id, entry] of this.direct) if (now - entry.seen > 50000) this.direct.delete(id);
+    this.publishMerged();
+  }
+
+  /** Says hello to a device found by Bonjour, with each shared key in turn until one is understood. */
+  async greet(peer, keys, me, gen) {
+    for (const group of keys) {
+      try {
+        const reply = await this.exchange(P.encodeFrame(group.key, this.helloMessage(me).header), group.key, peer, 4000);
+        if (reply.header.type !== 'hello' || gen !== this.generation) return;
+        this.unsilence(peer.id);
+        this.saveSchedule(peer.id, reply.header.quiet || null);
+        this.publishMerged();
+        return;
+      } catch (error) {
+        if (error.code) return;
+      }
+    }
   }
 
   async sayHello(address, me, gen) {
@@ -315,6 +353,7 @@ class PeerNetwork extends EventEmitter {
       const h = reply.header;
       if (h.type !== 'hello' || h.senderID === me.id || gen !== this.generation) return;
       const isNew = !this.direct.has(h.senderID);
+      this.lastContact.set(h.senderID, Date.now());
       this.unsilence(h.senderID);
       this.saveSchedule(h.senderID, h.quiet || null);
       this.direct.set(h.senderID, { peer: { id: h.senderID, name: h.senderName, platform: h.platform, groups: h.groups || [],
@@ -328,6 +367,7 @@ class PeerNetwork extends EventEmitter {
   learnDirectPeer(header, host, group) {
     if (!this.identity || header.senderID === this.identity.id || !header.listenPort || !host) return;
     const isNew = !this.direct.has(header.senderID);
+    this.lastContact.set(header.senderID, Date.now());
     this.unsilence(header.senderID);
     this.saveSchedule(header.senderID, header.quiet || null);
     this.direct.set(header.senderID, { peer: { id: header.senderID, name: header.senderName, platform: header.platform,
@@ -339,6 +379,7 @@ class PeerNetwork extends EventEmitter {
 
   silence(id, until, name, host, listenPort) {
     const untilMs = until ? until * 1000 : Date.now() + 12 * 3600 * 1000;
+    this.byeAt.set(id, Date.now());
     this.silenced.set(id, untilMs);
     if (host) {
       this.silencedAddresses.set(host, { id, until: untilMs });
@@ -346,11 +387,14 @@ class PeerNetwork extends EventEmitter {
     }
     this.direct.delete(id);
     this.browsed.delete(id);
+    // Reported before the device drops out of the list, so its "out" can say why.
+    this.emit('bye', id, until ? until * 1000 : null);
     this.publishMerged();
     this.emit('event', `«${name}» دخل وقت الإيقاف — لن نتصل به حتى يعود`, false);
   }
 
   unsilence(id) {
+    this.byeAt.delete(id);
     this.silenced.delete(id);
     for (const [address, info] of this.silencedAddresses) if (info.id === id) this.silencedAddresses.delete(address);
   }
@@ -371,7 +415,7 @@ class PeerNetwork extends EventEmitter {
   }
 
   saveKnownHost(host, id) {
-    if (!host || !id || (isLoopback(host) && !this.extraHosts.length)) return;
+    if (!host || !id || (isLoopback(host) && !this.extraHosts.length) || isLinkLocal(host)) return;
     const hosts = this.store.get('knownHosts') || {};
     if (hosts[id] === host) return;
     hosts[id] = host;
@@ -380,14 +424,24 @@ class PeerNetwork extends EventEmitter {
     this.store.set('knownHosts', hosts);
   }
 
+  /** A device of one of our groups is listed only while it answers: a minute from when it showed up or
+   *  was last heard from. Devices of other groups are only shown as "nearby", so Bonjour is enough. */
+  isAlive(peer, now) {
+    const me = this.identity;
+    if (!me || !peer.groups.some((g) => me.groups.some((x) => x.id === g.id && x.tag === g.tag))) return true;
+    return now - Math.max(this.lastContact.get(peer.id) || 0, this.firstSeen.get(peer.id) || 0) < LIVENESS;
+  }
+
   publishMerged() {
     const now = Date.now();
+    for (const id of this.browsed.keys()) if (!this.firstSeen.has(id)) this.firstSeen.set(id, now);
+    for (const id of [...this.firstSeen.keys()]) if (!this.browsed.has(id)) this.firstSeen.delete(id);
     const merged = new Map();
     for (const [id, { peer }] of this.direct) if (!((this.silenced.get(id) || 0) > now)) merged.set(id, peer);
-    for (const [id, peer] of this.browsed) merged.set(id, peer);
+    for (const [id, peer] of this.browsed) if (this.isAlive(peer, now)) merged.set(id, peer);
     if (this.identity) merged.delete(this.identity.id);
     this.emit('peers', [...merged.values()].sort((a, b) => a.name.localeCompare(b.name)));
   }
 }
 
-module.exports = { PeerNetwork, PREFERRED_PORT, readGateways };
+module.exports = { PeerNetwork, PREFERRED_PORT, LIVENESS, readGateways };
