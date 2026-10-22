@@ -18,6 +18,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -97,21 +98,32 @@ class PeerNetwork(
     var onPeers: (List<Peer>) -> Unit = {}
     var onEvent: (String, Boolean) -> Unit = { _, _ -> }
     var onRequest: suspend (WireMessage, GroupSecret) -> WireMessage? = { _, _ -> null }
+    /** A device said bye: quiet until the time (ms), or paused when null. Called before it drops out of the list. */
+    var onBye: (String, Long?) -> Unit = { _, _ -> }
 
     /** The port we listen on, sent along in hello and bye messages. */
     var listenPort = 0
         private set
 
-    private var identity: LocalIdentity? = null
+    internal var identity: LocalIdentity? = null
     private var generation = 0
     private var server: ServerSocket? = null
     private val jobs = mutableListOf<Job>()
     private var gateways: List<String> = emptyList()
-    private var browsed: Map<String, Peer> = emptyMap()
+    internal var browsed: Map<String, Peer> = emptyMap()
     private val direct = HashMap<String, Pair<Peer, Long>>()
     private val silenced = HashMap<String, Long>()
     private val silencedAddresses = HashMap<String, Pair<String, Long>>()
     private val lastGreeted = HashMap<String, Long>()
+    /** Last time each device answered us or called us (hello either way, anything we could decrypt). */
+    internal val lastContact = ConcurrentHashMap<String, Long>()
+    /** When each device listed by mDNS first showed up (this session). */
+    internal val firstSeen = HashMap<String, Long>()
+    /**
+     * When each device said bye. Its goodbye takes a moment to reach mDNS, so an advertisement seen right after
+     * is the old one, not the device coming back (a hello still is).
+     */
+    internal val byeAt = HashMap<String, Long>()
 
     fun start(me: LocalIdentity) {
         tearDown()
@@ -218,6 +230,7 @@ class PeerNetwork(
             // Anything we can't decrypt (another group, a stranger, a port scan) is dropped silently.
             val (request, group) = withContext(Dispatchers.Default) { me.open(body) } ?: return
             senderName = request.header.senderName
+            if (request.header.type != MessageType.BYE) lastContact[request.header.senderID] = System.currentTimeMillis()
             val remote = cleanAddress(socket.inetAddress?.hostAddress)
             val header = request.header
             val reply = when (header.type) {
@@ -283,12 +296,14 @@ class PeerNetwork(
                 closeQuietly(socket)
             }
         }
-        return withContext(Dispatchers.Default) { WireMessage.open(body, key) }
+        val reply = withContext(Dispatchers.Default) { WireMessage.open(body, key) }
+        if (peer.id.isNotEmpty()) lastContact[peer.id] = System.currentTimeMillis()
+        return reply
     }
 
     // ------------------------------------------------------------------------------------------ mDNS
 
-    private fun syncBrowsed(services: List<DiscoveredService>, me: LocalIdentity) {
+    internal fun syncBrowsed(services: List<DiscoveredService>, me: LocalIdentity) {
         val next = HashMap<String, Peer>()
         for (service in services) {
             val txt = service.txt
@@ -297,6 +312,7 @@ class PeerNetwork(
             // Skip ourselves — including a second copy of this app, which mDNS renames "<id> (2)".
             if (id == me.id || service.name == me.id || service.name.startsWith(me.id + " (")) continue
             if (service.host.isEmpty() || service.port <= 0) continue
+            if (System.currentTimeMillis() - (byeAt[id] ?: 0) < 10_000) continue
             val groups = (0 until 8).mapNotNull { AdvertisedGroup.parse(txt["g$it"]) }
             val quiet = QuietSchedule.parse(txt["q"])
             // Keep an IPv6 link-local address's "%wlan0" scope: without it the address can't be reached.
@@ -331,12 +347,41 @@ class PeerNetwork(
         val now = System.currentTimeMillis()
         // Never call a device during its quiet hours (or after it said bye): even a refused connection
         // would show up as traffic on a monitored work computer.
-        val quietHosts = settings.knownHosts.filterKeys { isQuiet(it) }.values.toMutableSet()
+        // An fe80:: address saved without its interface can never be called again: skip it.
+        val known = settings.knownHosts.filterValues { !isUnscopedLinkLocal(it) }
+        val quietHosts = known.filterKeys { isQuiet(it) }.values.toMutableSet()
         for ((address, info) in silencedAddresses) if (info.second > now) quietHosts += address
-        val hosts = (gateways + settings.knownHosts.values + extraHosts).toSet() - quietHosts
+        val hosts = (gateways + known.values + extraHosts).toSet() - quietHosts
         for (host in hosts) scope.launch { sayHello(host, me, gen) }
+        // Group devices mDNS lists but we haven't heard from lately: greet them where mDNS says they are.
+        // An answer keeps them listed (see isAlive) and teaches us their address.
+        for (peer in browsed.values) {
+            if (isQuiet(peer.id) || now - (lastContact[peer.id] ?: 0) < 20_000) continue
+            val keys = me.groups.filter { g -> peer.groups.any { it.id == g.id && it.tag == g.key.tag } }
+            if (keys.isNotEmpty()) scope.launch { greet(peer, keys, me, gen) }
+        }
         // Forget direct peers that stopped answering.
-        if (direct.entries.removeAll { now - it.value.second > 50_000 }) publishMerged()
+        direct.entries.removeAll { now - it.value.second > 50_000 }
+        publishMerged()
+    }
+
+    /** Says hello to a device found by mDNS, with each shared key in turn until one is understood. */
+    private suspend fun greet(peer: Peer, keys: List<GroupSecret>, me: LocalIdentity, gen: Int) {
+        for (group in keys) {
+            val frame = withContext(Dispatchers.Default) { helloMessage(me).frame(group.key) }
+            val reply = try {
+                exchange(frame, group.key, peer, 4000)
+            } catch (_: ConnectFailed) {
+                return
+            } catch (_: Exception) {
+                continue
+            }
+            if (reply.header.type != MessageType.HELLO || gen != generation) return
+            unsilence(peer.id)
+            saveSchedule(peer.id, reply.header.quiet)
+            publishMerged()
+            return
+        }
     }
 
     private suspend fun sayHello(address: String, me: LocalIdentity, gen: Int) {
@@ -352,6 +397,7 @@ class PeerNetwork(
             }
             val h = reply.header
             if (h.type != MessageType.HELLO || h.senderID == me.id || gen != generation) return
+            lastContact[h.senderID] = System.currentTimeMillis()
             unsilence(h.senderID)
             saveSchedule(h.senderID, h.quiet)
             rememberDirect(Peer(h.senderID, h.senderName, h.platform, h.groups ?: emptyList(), host, port, true, h.quiet))
@@ -366,6 +412,7 @@ class PeerNetwork(
         if (header.senderID == me.id) return
         val port = header.listenPort ?: return
         if (port <= 0 || host.isEmpty()) return
+        lastContact[header.senderID] = System.currentTimeMillis()
         unsilence(header.senderID)
         saveSchedule(header.senderID, header.quiet)
         rememberDirect(
@@ -394,8 +441,10 @@ class PeerNetwork(
         scope.launch { sayHello(host, me, gen) }
     }
 
-    private fun silence(deviceID: String, untilSeconds: Double?, name: String, host: String, listenPort: Int?) {
-        val until = untilSeconds?.let { (it * 1000).toLong() } ?: (System.currentTimeMillis() + 12 * 3600 * 1000L)
+    internal fun silence(deviceID: String, untilSeconds: Double?, name: String, host: String, listenPort: Int?) {
+        val said = untilSeconds?.let { (it * 1000).toLong() }
+        val until = said ?: (System.currentTimeMillis() + 12 * 3600 * 1000L)
+        byeAt[deviceID] = System.currentTimeMillis()
         silenced[deviceID] = until
         // Also its address, in case we only know it as an address (gateway, not yet greeted).
         if (host.isNotEmpty()) {
@@ -404,11 +453,14 @@ class PeerNetwork(
         }
         direct.remove(deviceID)
         browsed = browsed - deviceID
+        // Reported before the device drops out of the list, so its "out" can say why.
+        onBye(deviceID, said)
         publishMerged()
         onEvent("«$name» دخل وقت الإيقاف — لن نتصل به حتى يعود", false)
     }
 
     private fun unsilence(deviceID: String) {
+        byeAt.remove(deviceID)
         silenced.remove(deviceID)
         silencedAddresses.entries.removeAll { it.value.first == deviceID }
     }
@@ -426,21 +478,35 @@ class PeerNetwork(
         settings.save()
     }
 
-    private fun saveKnownHost(host: String, deviceID: String) {
+    internal fun saveKnownHost(host: String, deviceID: String) {
         if (host.isEmpty() || deviceID.isEmpty()) return
         val isLoopback = host.startsWith("127.") || host == "::1"
         if (isLoopback && extraHosts.isEmpty()) return
+        // fe80:: means nothing without the interface it belongs to: calling it later always fails.
+        if (isUnscopedLinkLocal(host)) return
         if (settings.knownHosts[deviceID] == host) return
         settings.knownHosts[deviceID] = host
         while (settings.knownHosts.size > 20) settings.knownHosts.remove(settings.knownHosts.keys.first())
         settings.save()
     }
 
-    private fun publishMerged() {
+    /**
+     * A device of one of our groups is listed only while it answers: a minute from when it showed up or was last
+     * heard from. Devices of other groups are only shown as "nearby", so mDNS is enough for them.
+     */
+    private fun isAlive(peer: Peer, now: Long): Boolean {
+        val me = identity ?: return true
+        if (peer.groups.none { g -> me.groups.any { it.id == g.id && it.key.tag == g.tag } }) return true
+        return now - maxOf(lastContact[peer.id] ?: 0, firstSeen[peer.id] ?: 0) < LIVENESS_MS
+    }
+
+    internal fun publishMerged() {
         val now = System.currentTimeMillis()
+        for (id in browsed.keys) firstSeen.putIfAbsent(id, now)
+        firstSeen.keys.retainAll(browsed.keys)
         val merged = LinkedHashMap<String, Peer>()
         for ((id, entry) in direct) if ((silenced[id] ?: 0) <= now) merged[id] = entry.first
-        merged.putAll(browsed)
+        for ((id, peer) in browsed) if (isAlive(peer, now)) merged[id] = peer
         identity?.let { merged.remove(it.id) }
         onPeers(merged.values.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }))
     }
@@ -453,9 +519,16 @@ class PeerNetwork(
         discovery?.stop()
         browsed = emptyMap()
         direct.clear()
+        lastContact.clear()
+        firstSeen.clear()
     }
 
     companion object {
+        /** A device of our groups that hasn't been heard from for this long is gone, even if mDNS still lists it. */
+        const val LIVENESS_MS = 60_000L
+
+        fun isUnscopedLinkLocal(host: String) = host.lowercase().startsWith("fe80:") && '%' !in host
+
         private val watchdogs = Executors.newSingleThreadScheduledExecutor { r ->
             Thread(r, "coshare-timeouts").apply { isDaemon = true }
         }

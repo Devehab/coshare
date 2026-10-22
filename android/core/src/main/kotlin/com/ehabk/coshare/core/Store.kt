@@ -64,6 +64,12 @@ class Settings(private val file: File, defaultName: String) {
     var clipMark = 0L
     /** Whether the person saw the explanation of Android's clipboard limit. */
     var introSeen = false
+    /** Notify when a device of my groups comes in or goes out (each kind can be switched off). */
+    var notifyDevices = true
+    var notifyJoins = true
+    var notifyLeaves = true
+    /** groupID → every device ID ever seen in it ("joined" the first time, "back" afterwards). */
+    var knownMembers: Map<String, List<String>> = emptyMap()
 
     init {
         val o = readJson(file) as? JsonObject
@@ -92,6 +98,12 @@ class Settings(private val file: File, defaultName: String) {
             o.int("historyRetentionHours")?.let { historyRetentionHours = Retention.clamp(it) }
             (o["clipMark"] as? JsonPrimitive)?.content?.toLongOrNull()?.let { clipMark = it }
             o.bool("introSeen")?.let { introSeen = it }
+            o.bool("notifyDevices")?.let { notifyDevices = it }
+            o.bool("notifyJoins")?.let { notifyJoins = it }
+            o.bool("notifyLeaves")?.let { notifyLeaves = it }
+            knownMembers = (o["knownMembers"] as? JsonObject)?.mapValues { (_, ids) ->
+                (ids as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content } ?: emptyList()
+            } ?: emptyMap()
         } else {
             save()
         }
@@ -117,6 +129,10 @@ class Settings(private val file: File, defaultName: String) {
             put("historyRetentionHours", historyRetentionHours)
             put("clipMark", clipMark)
             put("introSeen", introSeen)
+            put("notifyDevices", notifyDevices)
+            put("notifyJoins", notifyJoins)
+            put("notifyLeaves", notifyLeaves)
+            put("knownMembers", JsonObject(knownMembers.mapValues { (_, ids) -> JsonArray(ids.map { JsonPrimitive(it) }) }))
         }.toString())
     }
 }

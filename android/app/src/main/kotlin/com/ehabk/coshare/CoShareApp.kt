@@ -32,6 +32,7 @@ class CoShareApp : Application() {
                 discovery = NsdDiscovery(this),
                 gateways = { localNetwork.gateways() },
                 prepareSocket = { socket, host -> localNetwork.bindToLan(socket, host) },
+                showPresence = { event, title, body -> Notifications.presence(this, event, title, body) },
             ),
         ).also { engine ->
             engine.start()

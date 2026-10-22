@@ -66,6 +66,9 @@ data class SettingsSnapshot(
     val use24Hour: Boolean,
     val historyRetentionHours: Int,
     val introSeen: Boolean,
+    val notifyDevices: Boolean,
+    val notifyJoins: Boolean,
+    val notifyLeaves: Boolean,
 )
 
 /** Everything the screens need to draw themselves. */
@@ -96,6 +99,10 @@ class EngineConfig(
     /** Called with every outgoing socket before it connects (Android: use the Wi-Fi network that has that address). */
     val prepareSocket: (java.net.Socket, String) -> Unit = { _, _ -> },
     val echoLog: ((String) -> Unit)? = null,
+    /** Shows a "device in / out" notification (title, body); only called for the kinds the person wants. */
+    val showPresence: (PresenceEvent, String, String) -> Unit = { _, _, _ -> },
+    /** Quiet time after this device (re)connects; the apps use PresenceWatch.SETTLE_TIME_MS, tests a shorter one. */
+    val presenceSettleMs: Long = PresenceWatch.SETTLE_TIME_MS,
 )
 
 class GroupException(message: String) : Exception(message)
@@ -112,6 +119,14 @@ class SyncEngine(private val config: EngineConfig) {
     val log = ActivityLog(config.dataDir, settings.historyRetentionHours, config.echoLog)
     private val clipboard = config.clipboard
     val network = PeerNetwork(scope, settings, config.discovery, config.gateways, config.port, config.extraHosts, config.prepareSocket)
+    /** Decides when a device of my groups came in or went out (see notifyPresence). */
+    val presenceWatch = PresenceWatch(
+        settings.knownMembers.mapValues { it.value.toSet() },
+        { known -> settings.knownMembers = known; settings.save() },
+        config.presenceSettleMs,
+    )
+    /** False while this device has no network at all: others vanishing then is our doing, not theirs. */
+    private var lanUp = true
 
     private var started = false
     private var presence: Presence = Presence.Online
@@ -139,6 +154,8 @@ class SyncEngine(private val config: EngineConfig) {
         network.onPeers = { updatePeers(it) }
         network.onEvent = { text, isError -> log.add(text, isError); changed() }
         network.onRequest = { message, group -> handle(message, group) }
+        network.onBye = { deviceID, untilMs -> presenceWatch.bye(deviceID, untilMs) }
+        presenceWatch.onEvent = { notifyPresence(it) }
     }
 
     private val isOnline get() = presence.isOnline
@@ -159,6 +176,7 @@ class SyncEngine(private val config: EngineConfig) {
         presence = computePresence()
         if (isOnline) startNetwork() else log.add(offlineMessage(presence))
         launch { while (true) { delay(15_000); updatePresence() } }
+        launch { while (true) { delay(5000); presenceWatch.tick() } }
         // Every minute, so even a one-hour retention is kept to the minute.
         launch {
             while (true) {
@@ -185,6 +203,8 @@ class SyncEngine(private val config: EngineConfig) {
 
     private fun startNetwork() {
         if (!isOnline) return
+        // Devices are about to drop out and come back because of us: don't report any of it.
+        presenceWatch.settle()
         val gen = ++networkGeneration
         val memberships = settings.groups
         scope.launch {
@@ -203,10 +223,22 @@ class SyncEngine(private val config: EngineConfig) {
     /** Looks for devices again without dropping the current connections. */
     fun refreshDiscovery() = scope.launch { if (isOnline) network.refreshDiscovery() }
 
+    /**
+     * This device's own connection was interrupted (the background service restarted, the phone woke up):
+     * devices drop out and come back because of us, so look again quietly.
+     */
+    fun systemDidWake() = scope.launch {
+        if (!started || !isOnline) return@launch
+        presenceWatch.settle()
+        network.refreshDiscovery()
+    }
+
     /** Wi-Fi joined/left or the gateway changed: start over on the new network. */
     fun networkChanged(signature: String) = scope.launch {
         val last = lastNetworkSignature
         lastNetworkSignature = signature
+        lanUp = signature != "offline"
+        if (!lanUp) presenceWatch.reset()
         if (!started || !isOnline || last == null || last == signature || signature == "offline") return@launch
         log.add("تغيّرت الشبكة — إعادة الاتصال")
         startNetwork()
@@ -253,6 +285,7 @@ class SyncEngine(private val config: EngineConfig) {
     /** Tells the group "quiet until …" once, then closes every socket: no listening, no mDNS, no probes. */
     private fun goOffline(next: Presence) {
         log.add(offlineMessage(next))
+        presenceWatch.reset()
         networkGeneration++
         val targets = connectedPeers()
         val me = identity
@@ -415,7 +448,30 @@ class SyncEngine(private val config: EngineConfig) {
         // A device that just (re)joined may hold something copied while we couldn't see each other.
         val joined = now.filter { it.id !in oldIDs }
         if (joined.isNotEmpty()) scope.launch { pullLatest(joined) }
+        if (lanUp) {
+            val mine = identity?.groups ?: emptyList()
+            presenceWatch.update(now.map { peer ->
+                PresenceMember(
+                    peer.id, peer.name,
+                    mine.filter { g -> peer.groups.any { it.id == g.id && it.tag == g.key.tag } }.map { GroupRef(it.id, it.membership.name) },
+                )
+            })
+        }
         changed()
+    }
+
+    /** Shows a "came in" / "went out" notification if the person wants that kind (and logs it). */
+    fun notifyPresence(event: PresenceEvent) {
+        if (!settings.notifyDevices) return
+        if (if (event.kind == PresenceKind.LEFT) !settings.notifyLeaves else !settings.notifyJoins) return
+        val (title, body) = PresenceWatch.text(event, settings.use24Hour)
+        log.add("🔔 $title — $body")
+        changed()
+        try {
+            config.showPresence(event, title, body)
+        } catch (e: Exception) {
+            log.add("تعذّر إظهار الإشعار: ${e.message ?: e.javaClass.simpleName}", true)
+        }
     }
 
     // ------------------------------------------------------------------------------------------ this clipboard → devices
@@ -688,6 +744,9 @@ class SyncEngine(private val config: EngineConfig) {
                 use24Hour = settings.use24Hour,
                 historyRetentionHours = settings.historyRetentionHours,
                 introSeen = settings.introSeen,
+                notifyDevices = settings.notifyDevices,
+                notifyJoins = settings.notifyJoins,
+                notifyLeaves = settings.notifyLeaves,
             ),
             blobDir = history.blobs,
             listenPort = network.listenPort,

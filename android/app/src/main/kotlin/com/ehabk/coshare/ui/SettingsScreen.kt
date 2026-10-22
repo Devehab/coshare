@@ -1,5 +1,6 @@
 package com.ehabk.coshare.ui
 
+import android.Manifest
 import android.app.StatusBarManager
 import android.app.TimePickerDialog
 import android.content.ComponentName
@@ -25,7 +26,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +45,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ehabk.coshare.CoShareApp
+import com.ehabk.coshare.Notifications
 import com.ehabk.coshare.R
 import com.ehabk.coshare.SendTileService
 import com.ehabk.coshare.SyncService
@@ -96,6 +105,13 @@ fun SettingsScreen(engine: SyncEngine, state: EngineState, onBack: () -> Unit) {
                 }
             }
             Hint("الحافظة والسجل، مع الصور ولقطات الشاشة المنسوخة، بينحذفوا تلقائياً بعد هالمدة (الحد الأقصى أسبوع).")
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionTitle("الإشعارات")
+            Panel(padding = 14.dp) { DeviceNotificationToggles(engine, state) }
+            Hint("بيوصلك إشعار لما جهاز من مجموعاتك يتصل أو ينقطع، ومعه السبب إذا معروف. الجهاز اللي بينقطع وبيرجع خلال ثواني ما بيعمل إشعار.")
+            Hint("على أندرويد الإشعارات بتشتغل طول ما CoShare شغّال، فخلّي «العمل الدائم بالخلفية» مفعّل.")
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -166,6 +182,62 @@ fun SettingsScreen(engine: SyncEngine, state: EngineState, onBack: () -> Unit) {
 
         val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "" }
         Hint("CoShare لأندرويد $version · بدون خوادم وبدون حسابات: كل شي بيضل على شبكتك ومشفّر بكلمة سر المجموعة.", Modifier.fillMaxWidth(), center = true)
+    }
+}
+
+/** Notify when a device of my groups comes in or goes out; each kind has its own switch (SharedViews.swift). */
+@Composable
+private fun DeviceNotificationToggles(engine: SyncEngine, state: EngineState) {
+    val c = CoShareTheme.colors
+    val context = LocalContext.current
+    val s = state.settings
+    var allowed by remember { mutableStateOf(Notifications.devicesAllowed(context)) }
+    // The person may switch notifications on or off in the system settings meanwhile.
+    val owner = LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) allowed = Notifications.devicesAllowed(context)
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        allowed = Notifications.devicesAllowed(context)
+        if (it) SyncService.sync(context)
+    }
+    Column {
+        SettingRow("إشعارات الأجهزة") {
+            Toggle(s.notifyDevices) { on ->
+                engine.update { notifyDevices = on }
+                // needsNotificationPermission is only true on Android 13+, where the permission exists.
+                if (on && CoShareApp.needsNotificationPermission(context)) {
+                    askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+        if (s.notifyDevices) {
+            Divider()
+            SettingRow("لما يدخل جهاز (ينضم أو يرجع متصل)") { Toggle(s.notifyJoins) { on -> engine.update { notifyJoins = on } } }
+            Divider()
+            SettingRow("لما يطلع جهاز (ينقطع أو يوقّف)") { Toggle(s.notifyLeaves) { on -> engine.update { notifyLeaves = on } } }
+            if (!allowed) {
+                Divider()
+                Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("الإشعارات مسكّرة لـ CoShare من إعدادات النظام.", fontSize = 14.sp, color = c.danger)
+                    LinkButton("فتح إعدادات الإشعارات", { openNotificationSettings(context) })
+                }
+            }
+        }
+    }
+}
+
+private fun openNotificationSettings(context: Context) {
+    val intents = listOf(
+        Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName),
+        Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri()),
+    )
+    for (intent in intents) {
+        if (runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
     }
 }
 

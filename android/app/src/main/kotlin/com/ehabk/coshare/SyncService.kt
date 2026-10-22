@@ -11,11 +11,14 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.annotation.SuppressLint
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.ehabk.coshare.core.EngineState
 import com.ehabk.coshare.core.Presence
+import com.ehabk.coshare.core.PresenceEvent
 import com.ehabk.coshare.core.TimeFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +31,9 @@ import kotlinx.coroutines.launch
 
 object Notifications {
     const val CHANNEL_STATUS = "status"
+    const val CHANNEL_DEVICES = "devices"
     const val STATUS_ID = 1
+    private const val PRESENCE_ID = 2
 
     fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -36,7 +41,40 @@ object Notifications {
             description = "يبقي CoShare شغّالاً ليستقبل من أجهزتك، مع زر لإرسال الحافظة"
             setShowBadge(false)
         }
-        manager.createNotificationChannel(channel)
+        val devices = NotificationChannel(CHANNEL_DEVICES, "الأجهزة", NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = "لما جهاز من مجموعاتك يتصل أو ينقطع"
+        }
+        manager.createNotificationChannels(listOf(channel, devices))
+    }
+
+    /** Whether CoShare may show device notifications (the app's notifications and the "الأجهزة" channel are on). */
+    fun devicesAllowed(context: Context): Boolean {
+        val compat = NotificationManagerCompat.from(context)
+        if (!compat.areNotificationsEnabled()) return false
+        return context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel(CHANNEL_DEVICES)?.importance != NotificationManager.IMPORTANCE_NONE
+    }
+
+    /** "Device in / out": one slot per device, so its "out" replaces its earlier "in". */
+    @SuppressLint("MissingPermission")
+    fun presence(context: Context, event: PresenceEvent, title: String, body: String) {
+        if (!devicesAllowed(context)) return
+        val open = PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_DEVICES)
+            .setSmallIcon(R.drawable.ic_stat_coshare)
+            .setColor(0xFFD24A22.toInt())
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setGroup("presence")
+            .build()
+        NotificationManagerCompat.from(context).notify("presence.${event.member.id}", PRESENCE_ID, notification)
     }
 
     fun status(context: Context, state: EngineState?): Notification {
@@ -109,6 +147,8 @@ class SyncService : Service() {
             return
         }
         val engine = app.engine
+        // The service (re)started: devices may drop out and come back because of us, so look again quietly.
+        engine.systemDidWake()
         val manager = getSystemService(android.app.NotificationManager::class.java)
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main).also { scope ->
             watcher = scope.launch {

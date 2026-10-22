@@ -62,6 +62,8 @@ fun testPng(seed: Int): ByteArray {
 class InteropTest {
     private val tmp: File = Files.createTempDirectory("coshare-interop").toFile()
     private val engines = mutableListOf<SyncEngine>()
+    /** "Device in / out" events each engine decided to show, by engine name. */
+    private val presence = HashMap<String, CopyOnWriteArrayList<PresenceEvent>>()
 
     @After
     fun tearDown() {
@@ -77,6 +79,8 @@ class InteropTest {
             EngineConfig(
                 dataDir = dir, platform = platform, defaultName = name, clipboard = clipboard, port = port,
                 extraHosts = listOf("127.0.0.1:$greet"), pollIntervalMs = 200,
+                showPresence = { event, _, _ -> presence.getOrPut(name) { CopyOnWriteArrayList() } += event },
+                presenceSettleMs = 1500,
                 echoLog = if (System.getenv("COSHARE_TEST_VERBOSE") != null) { line -> println("[$name] $line") } else null,
             ),
         )
@@ -243,11 +247,23 @@ class InteropTest {
         peer.send("history")
         peer.awaitLine("peer history shows the Android text") { it.startsWith("HISTORY received text from=AndroidPeer after joining Work") }
 
-        // The peer's quiet hours: it says bye and drops out; "resume" brings it back.
+        // The peer's quiet hours: it says bye and drops out at once, with its end time; "resume" brings it back.
+        Thread.sleep(2000) // past this side's settle time after joining Work
+        val events = presence.getOrPut("AndroidPeer") { CopyOnWriteArrayList() }
+        events.clear()
         peer.send("quietnow 5")
         eventually("peer silenced after its bye") { me.connectedNames().isEmpty() }
+        eventually("an 'out' notification with the quiet hours", 5000) {
+            events.any { it.kind == PresenceKind.LEFT && it.member.name == peerName && it.reason is LeaveReason.Quiet }
+        }
+        val out = events.first { it.kind == PresenceKind.LEFT }
+        assertEquals(setOf("Home", "Work"), out.member.groups.map { it.name }.toSet())
+        assertTrue((out.reason as LeaveReason.Quiet).untilMs > System.currentTimeMillis() + 3 * 60_000, "ends about 5 minutes from now")
+        assertTrue(me.state.value.log.any { it.text.startsWith("🔔 $peerName طلع — دخل وقت الإيقاف لحد ") })
         peer.send("resume")
         eventually("peer back after resume", 40_000) { me.connectedNames() == listOf(peerName) }
+        eventually("a 'back' notification", 5000) { events.any { it.kind == PresenceKind.BACK && it.member.name == peerName } }
+        assertEquals(2, events.size, "exactly one out and one back: ${events.map { it.kind }}")
 
         // This side's quiet hours: a bye, then nothing until "resume today".
         val now = java.time.LocalTime.now()
