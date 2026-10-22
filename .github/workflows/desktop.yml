@@ -167,6 +167,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/desktop-v')
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -175,6 +179,17 @@ jobs:
           merge-multiple: true
       - name: Add the Mac app
         run: cp website/downloads/CoShare-mac.zip out/ && ls -la out
+      - name: Fingerprints (SHA256SUMS.txt)
+        run: cd out && sha256sum CoShare* > SHA256SUMS.txt && cat SHA256SUMS.txt
+      # Proof that these files were built here, from this commit: gh attestation verify <file> --repo Devehab/coshare
+      # (the Mac app is built on a Mac and committed, so it has a fingerprint but no build attestation).
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            out/CoShare-Setup-*.exe
+            out/CoShare-*.deb
+            out/CoShare-*.rpm
+            out/CoShare-*.AppImage
       - uses: softprops/action-gh-release@v2
         with:
           name: CoShare ${{ github.ref_name }}
@@ -196,6 +211,9 @@ jobs:
             | Fedora, RHEL, openSUSE | `CoShare-x86_64.rpm` (ARM: `CoShare-aarch64.rpm`) |
             | Any Linux (Arch, Manjaro, …) | `CoShare-x86_64.AppImage` (ARM: `CoShare-arm64.AppImage`) |
             | macOS 12+ | `CoShare-mac.zip` |
+
+            **Check a download:** compare it with `SHA256SUMS.txt`, or prove it was built here from this code:
+            `gh attestation verify CoShare-Setup-x64.exe --repo Devehab/coshare`
 
             Windows asks once to allow CoShare on the network: choose **Private networks**.
             The AppImage runs on any distribution: `chmod +x CoShare-*.AppImage` and open it.

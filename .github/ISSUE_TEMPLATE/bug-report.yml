@@ -1,0 +1,23 @@
+name: Something doesn't work
+description: Devices don't find each other, a copy doesn't arrive, an install fails…
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: devices
+    attributes:
+      label: Devices and systems
+      placeholder: "iPhone 14, iOS 18.5 · MacBook Air M2, macOS 15.4 · Windows 11 laptop"
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Activity log (optional)
+      description: "In CoShare: the Log tab. It never contains what you copied. For the iPhone installer: ~/CoShare-iOS/build/install-ios.log"
+      render: text

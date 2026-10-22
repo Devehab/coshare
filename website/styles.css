@@ -129,6 +129,13 @@ code, kbd { font-family: var(--mono); }
   transition: color .15s, border-color .15s;
 }
 .lang-toggle:hover { color: var(--ink); border-color: var(--ink); }
+.gh-btn {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 6px 12px; border-radius: 11px;
+  border: 1px solid var(--line-strong); color: var(--muted); font-size: 14px; transition: color .15s, border-color .15s;
+}
+.gh-btn:hover { color: var(--ink); border-color: var(--ink); }
+.gh-btn svg { width: 18px; height: 18px; }
+@media (max-width: 560px) { .gh-btn span { display: none; } .gh-btn { padding: 6px 10px; } }
 .menu-btn {
   display: none; width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
   border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
@@ -465,6 +472,14 @@ table.compare { width: 100%; border-collapse: collapse; }
 .lp-pkg span { color: var(--signal-ink); font: 500 13px var(--mono); }
 .android-panel ol.lp-steps li { margin-bottom: 4px; }
 .ad-btn { margin-top: 16px; }
+.io-guide { margin-top: 16px; }
+.io-store { margin-top: 20px !important; }
+.roadmap { margin-top: 18px; padding: 24px 26px; border-radius: var(--radius-sm); border: 1px dashed var(--line-strong); background: var(--surface); }
+.roadmap h3 { margin: 0 0 8px; font-size: 18px; }
+.roadmap ul { margin: 0; padding-inline-start: 20px; color: var(--muted); line-height: 1.95; }
+.os-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 26px; }
+.os-ctas .btn svg { width: 20px; height: 20px; }
+@media (max-width: 560px) { .os-ctas .btn { width: 100%; } }
 .ad-text { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; line-height: 1.8; }
 .ad-qr { width: 168px; padding: 10px; margin: 0 0 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
 .ad-qr img { display: block; width: 148px; height: 148px; image-rendering: pixelated; }
@@ -564,6 +579,7 @@ html[lang="ar"] .doc-toc strong { letter-spacing: 0; font-size: 13.5px; }
 .doc li { margin-bottom: 8px; }
 .doc li strong, .doc p strong { color: var(--ink); }
 .doc code { font-size: .88em; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
+.doc .cmd code { background: none; border: 0; padding: 0; font-size: 14px; }
 .doc a { color: var(--signal-ink); text-decoration: underline; text-underline-offset: 3px; }
 .tldr { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 0 0 44px; }
 .tldr div { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--line); font-size: 15.5px; color: var(--text); }

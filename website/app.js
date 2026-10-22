@@ -123,6 +123,24 @@
     "dl.rec": "Your device",
     "dl.btn": "Download",
     "dl.ios.req": "iOS & iPadOS 15 or later",
+    "dl.ios.btn": "Install from a Mac",
+    "dl.ios.guide": "Full guide",
+    "dl.mac.alt": "First time: right-click → Open",
+    "io.title": "CoShare on iPhone and iPad",
+    "io.sub": "It’s not on the App Store yet, so you install it like a developer: from your Mac, with your own Apple ID (a free one works).",
+    "io.tag": "One line",
+    "io.cmd.title": "Plug the device into your Mac and run in Terminal",
+    "io.s1": "Installs Xcode if it’s missing, and accepts its license and components",
+    "io.s2": "Downloads the code from GitHub, and finds your Apple ID in Xcode",
+    "io.s3": "Waits until the device is connected, trusts the Mac and has Developer Mode on, and tells you what to tap",
+    "io.s4": "Builds CoShare, signs it, installs it and opens it; if something fails it fixes what it can and tries again",
+    "io.guide": "Full step-by-step guide",
+    "io.need.title": "What you need",
+    "io.n1": "A Mac, and a cable for the iPhone or iPad",
+    "io.n2": "iOS or iPadOS 15 or later",
+    "io.n3": "An Apple ID, and a free one is enough: it signs the app for 7 days, and the same line renews it, keeping your groups",
+    "io.store.title": "Want to publish it on the App Store?",
+    "io.store.p": "You can, it’s MIT-licensed. Publish it under your account and <a href=\"https://github.com/Devehab/coshare/issues/new?template=store-release.yml\" rel=\"noopener\">tell us</a>, and we’ll link it here so people can install it in one tap.",
     "dl.mac.req": "macOS 12 or later · Apple Silicon & Intel",
     "dl.android.req": "Android 8 or later · phones & tablets",
     "dl.win.req": "Windows 10 & 11 · Intel, AMD & ARM",
@@ -161,7 +179,25 @@
     "lx.pkg.title": "Or download a package",
     "lx.any": "Any distribution (Arch, openSUSE…)",
     "lx.arm": "ARM devices:",
-    "dl.note": "Version 1.0 · Free · No account · No ads",
+    "dl.note": "Version 1.0 · Free · Open source · No account · No ads",
+    "nav.open": "Open source",
+    "os.kicker": "Open source",
+    "os.title": "Built in the open, <span class=\"mark\">open to everyone</span>",
+    "os.sub": "Every platform ties syncing to its own world and account, and that makes sense. CoShare competes with none of them: it’s a simple bridge between all your devices, whoever made them. And every line of it is on GitHub under the MIT license.",
+    "os.c1.t": "All the code, in plain sight",
+    "os.c1.p": "Every release is built in public from this code by GitHub Actions and tested on every system. Read it, build it yourself, improve it.",
+    "os.c2.t": "Goes anywhere",
+    "os.c2.p": "The protocol is one documented page with a test vector. Any developer can build a version for a new system that works with every existing device, without changing them.",
+    "os.c3.t": "Publish it on any store",
+    "os.c3.p": "The license lets you publish it on the App Store, Google Play or the Microsoft Store under your own account. Tell us, and we’ll link it here so people can install it in one tap.",
+    "os.next": "What’s next, and any help is welcome",
+    "os.r1": "Files of every kind (PDFs and documents), not only text and images",
+    "os.r2": "New systems: ChromeOS, HarmonyOS, FreeBSD, and a command-line tool for servers",
+    "os.r3": "Store releases: App Store, Google Play, Microsoft Store and Flathub",
+    "os.r4": "Search and pins in the history, and more languages than Arabic and English",
+    "os.star": "Star it on GitHub ⭐",
+    "os.contrib": "How to contribute",
+    "os.protocol": "The protocol",
 
     "faq.kicker": "FAQ",
     "faq.title": "Got a question?",
@@ -187,6 +223,10 @@
     "faq.a10": "Yes. In Settings, turn on “Quiet hours” and choose the days and times. During them CoShare doesn’t read the clipboard, send, receive or even appear on the network, and your other devices know its schedule so they don’t try to reach it. Finished early? Tap “Resume today”.",
     "faq.q11": "How do I know a device has dropped out of the group?",
     "faq.a11": "You get a notification when a device in your groups connects or disconnects, with the reason when it’s known: it left the network or went to sleep, entered its quiet hours, or paused sharing. A drop of a few seconds sends nothing. In Settings you can turn notifications on or off, or choose only “comes in” or only “goes out”. On iPhone they work as long as “Always run in the background” is on.",
+    "faq.q12": "Why does my browser or system warn me when I download CoShare?",
+    "faq.a12": "Because CoShare isn’t distributed through a store or signed with a paid certificate, Chrome, Windows, macOS and Android treat it as an “unknown” app. Every independent app gets this warning; it says nothing about what’s inside. All the code is open on GitHub, every file is built in public from it by GitHub Actions, and releases come with a SHA256SUMS.txt file to check that what you downloaded is the same, byte for byte. To continue: on a Mac, the first time, right-click → Open (or System Settings → Privacy & Security → Open Anyway); on Windows, More info → Run anyway; in Chrome, Keep; on Android, Install anyway.",
+    "faq.q13": "Is CoShare open source? Can I publish it on a store?",
+    "faq.a13": "Yes. All the code is on <a href=\"https://github.com/Devehab/coshare\" rel=\"noopener\">GitHub</a> under the MIT license: read it, change it, build it yourself, or publish it on the App Store, Google Play or elsewhere under your own account. If you do, <a href=\"https://github.com/Devehab/coshare/issues/new?template=store-release.yml\" rel=\"noopener\">let us know</a> and we’ll link it here.",
     "faq.q9": "How many devices can I pair?",
     "faq.a9": "There’s no practical limit. Laptops, phones and tablets together, all receiving at the same moment.",
 
@@ -297,6 +337,8 @@
       if (os === "linux") { hero.href = "#linux"; stickyLabel.parentNode.href = "#linux"; }
       // Android visitors get the short install guide, with the download button in it.
       if (os === "android") { hero.href = "#android"; stickyLabel.parentNode.href = "#android"; }
+      // iPhone and iPad: it's installed from a Mac, so show how.
+      if (os === "ios") { hero.href = "#ios"; stickyLabel.parentNode.href = "#ios"; }
     }
   }
 

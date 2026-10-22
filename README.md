@@ -1,204 +1,110 @@
-# CoShare: نسخ ولصق بين كل أجهزتك، محلي بالكامل
+<div align="center">
 
-> **One clipboard for all your devices.** Copy on your iPhone or Android phone, paste on your Mac, Windows or Linux PC (and back), even across different accounts. Everything stays on your local network, end-to-end encrypted, with no cloud and no account.
-> 🌐 **Website:** https://devehab.github.io/coshare/
+<img src="website/assets/icon-256.png" width="96" alt="CoShare icon">
 
-تنسخ نص أو صورة (أو لقطة شاشة) على أي جهاز، ماك أو آيفون أو آيباد أو أندرويد أو ويندوز أو لينكس، وبيصير جاهز للصق فوراً على كل الأجهزة.
+# CoShare
 
-- **بدون إنترنت ولا سيرفر ولا Apple ID مشترك.** الأجهزة بتلاقي بعضها على نفس الواي فاي (Bonjour)، وكل شي بينبعت مشفّر (ChaCha20-Poly1305) بكلمة سر المجموعة.
-- **جودة كاملة.** الصور بتوصل نفس الملف الأصلي بالبايت.
-- **بيتجاهل كلمات السر** اللي بتنسخها من 1Password وأمثاله.
-- **سجل بتختار مدته** للنسخ والأحداث: من ساعة لأسبوع (افتراضياً يوم واحد). الأقدم بينحذف تلقائياً، مع الصور ولقطات الشاشة المنسوخة.
-- **الوقت بصيغة ١٢ ساعة (AM/PM)** افتراضياً، أو ٢٤ ساعة من الإعدادات.
-- **يدعم أنظمة آخر ٥ سنين وأحدث:** macOS 12 Monterey (Intel و Apple Silicon)، و iOS/iPadOS 15، و Android 8 (موبايل وتابلت)، و Windows 10/11 (x64 و ARM)، و Linux (Ubuntu 20.04 و Debian 11 و Fedora و RHEL 9 وما بعدها، وأي توزيعة بالـ AppImage). على macOS 12 بيشتغل نفس التطبيق بواجهة AppKit لأنه MenuBarExtra بيحتاج macOS 13، وعلى iOS 15 بيشتغل كله ما عدا إجراءات تطبيق الاختصارات (بتحتاج iOS 16).
+**Copy here. Paste there. On every device you own.**
 
----
+One clipboard for iPhone, iPad, Mac, Windows, Linux and Android: across different accounts, over your own Wi-Fi, end-to-end encrypted. No cloud, no sign-up, no ads.
 
-## ١) الماك
+[![Desktop release](https://img.shields.io/github/v/release/Devehab/coshare?filter=desktop-*&label=desktop&color=d1572e)](https://github.com/Devehab/coshare/releases/latest)
+[![Android](https://img.shields.io/github/v/release/Devehab/coshare?filter=android-v*&label=android&color=3ddc84)](https://github.com/Devehab/coshare/releases/tag/android-latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/Devehab/coshare/desktop.yml?branch=main&label=tests)](https://github.com/Devehab/coshare/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2b7a78)](LICENSE)
 
-**على هالماك:** CoShare مثبّت بـ `/Applications` وشغّال، ومفعّل إنه يشتغل لحاله عند بدء الجهاز. أيقونته 📋 بشريط القوائم فوق.
+**[Website & downloads](https://devehab.github.io/coshare/)** · **[العربية](README.ar.md)** · **[Protocol](docs/PROTOCOL.md)** · **[Contributing](CONTRIBUTING.md)**
 
-**على ماك تاني:**
-1. انقل الملف `build/CoShare-mac.zip` للماك التاني، فك الضغط، وحط `CoShare.app` بمجلد Applications.
-2. أول مرة: **كليك يمين ← فتح**، لأن التطبيق مش موقّع من أبل. أو من Terminal:
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/CoShare.app
-   ```
-3. لما يسألك عن **الشبكة المحلية** اضغط «السماح».
+<img src="website/assets/og-image.png" width="760" alt="CoShare: copy on one device, paste on another">
 
-**لإعادة البناء بعد أي تعديل** (بتكفي Command Line Tools، ما بتحتاج Xcode):
-```bash
-scripts/build-mac.sh --install
-```
+</div>
 
-## ٢) الآيفون / الآيباد
+## Why
 
-> لإعادة التثبيت بعد أي تعديل، أو بعد ما تخلص صلاحية التوقيع، اتبع الخطوات تحت.
->
-> ⚠️ Xcode بيحتاج مساحة كبيرة (حوالي ١٠ غيغا فاضية) لأول تشغيل على التلفون، لأنه بينسخ رموز نظام iOS من الجهاز.
+Copy and paste between devices works beautifully, as long as they all come from the same company and use the same account. Real life is mixed: an iPhone and a Windows laptop from work, an Android phone and a MacBook, a personal Apple ID on one device and a work one on the other.
 
-1. نزّل **Xcode** من App Store وافتحه مرة.
-2. Xcode ← Settings ← Accounts ← ضيف الـ Apple ID تبعك (الحساب المجاني بيكفي).
-3. افتح `CoShare.xcodeproj`، اختار الهدف **CoShare iOS** ← Signing & Capabilities ← **Team** = حسابك.
-   إذا طلع إن الـ Bundle Identifier محجوز، غيّره لشي فريد مثل `com.ehabk.CoShare2`.
-4. وصّل الآيفون بالكابل، اختاره من القائمة فوق، واضغط ▶︎ **Run**.
-5. على الآيفون: الإعدادات ← الخصوصية والأمان ← **وضع المطوّر** ← تشغيل. وإذا طلب منك: الإعدادات ← عام ← إدارة الأجهزة والـ VPN ← وثّق بحسابك.
-6. افتح CoShare واسمح بإذن **الشبكة المحلية**.
-7. **مهم جداً:** الإعدادات ← CoShare ← **اللصق من التطبيقات الأخرى** ← **السماح**. بدون هالخطوة iOS بيسألك كل مرة، والمزامنة بالخلفية ما بتشتغل.
-8. خلّي **«العمل الدائم بالخلفية»** مفعّل، ولا تسكّر التطبيق بالسحب من شاشة التطبيقات.
-9. غيّر اسم الجهاز من إعدادات CoShare (مثلاً «آيفون إيهاب»). iOS ما بيعطي التطبيقات اسم الجهاز الحقيقي، فكل الآيفونات بتطلع باسم «iPhone».
+CoShare doesn't care. It connects your devices directly over your local network, so everything you copy on one is ready to paste on all the others, in about a second.
 
-> بالحساب المجاني بيضل التطبيق شغّال **٧ أيام**، وبعدها بتعيد Run من Xcode (ثواني). بحساب المطوّر المدفوع (٩٩$ بالسنة) بيضل **سنة كاملة**.
+## Features
 
-نفس المشروع فيه كمان هدف **CoShare Mac** إذا حابب تبني تطبيق الماك من Xcode.
+- **Every system:** iOS and iPadOS 15+, macOS 12+ (Intel and Apple Silicon), Windows 10/11 (x64 and ARM), Android 8+, and Linux: Ubuntu, Debian, Fedora, RHEL, plus anything else through the AppImage. Supports devices from the last five years and newer.
+- **Any account:** different Apple IDs, Google accounts, or none at all.
+- **Text and full-quality images:** screenshots arrive byte for byte.
+- **Verification codes:** an OTP that reaches your phone can land on your laptop's clipboard automatically (an iOS Shortcut).
+- **Device notifications:** know when a device in your group comes in or goes out, and why. *New.*
+- **Quiet hours:** CoShare disappears from the network on your work computer during working hours.
+- **History that deletes itself:** one day by default, a week at most, images included.
+- **Groups:** create one with a password, join from the list or by scanning a QR code. A device can be in several groups.
+- **Hotspots too:** a laptop on your phone's hotspot finds the phone directly.
 
-## ٣) ويندوز ولينكس
+## Private by design
 
-**لينكس بأمر واحد** (أوبونتو وديبيان وفيدورا وآرتش وغيرها، Intel/AMD و ARM):
-```bash
-curl -fsSL https://devehab.github.io/coshare/install.sh | bash
-```
-بيختار الحزمة المناسبة، وبيثبّتها مع متطلباتها، وبيتأكد إن التشفير والشبكة والحافظة شغالين، وبيفتح CoShare. نفس الأمر بيحدّثه، وللإزالة: `curl -fsSL https://devehab.github.io/coshare/install.sh | bash -s -- --uninstall`.
+- **No server exists.** Devices find each other with Bonjour (mDNS) and talk over short TCP connections on your network. Nothing goes over the internet.
+- **End-to-end encrypted.** Every message is sealed with ChaCha20-Poly1305 under a key derived from the group password (PBKDF2-SHA256, 120,000 rounds, salted with the group ID). Others on the same Wi-Fi only see that a group exists.
+- **Nothing to collect.** No accounts, analytics, crash reporting or ads. The [privacy policy](https://devehab.github.io/coshare/privacy.html) lists every byte the app keeps, and where.
 
-أو نزّل الحزمة بإيدك من [صفحة التحميل](https://devehab.github.io/coshare/#download) أو من [آخر إصدار على GitHub](https://github.com/Devehab/coshare/releases/latest):
+## Install
 
-| النظام | الملف |
+| | |
 |---|---|
-| Windows 10/11 (Intel/AMD) | `CoShare-Setup-x64.exe` |
-| Windows 11 على ARM | `CoShare-Setup-arm64.exe` |
-| Ubuntu و Debian و Mint و Pop!_OS | `CoShare-amd64.deb`: `sudo apt install ./CoShare-amd64.deb` |
-| Fedora و RHEL و openSUSE | `CoShare-x86_64.rpm`: `sudo dnf install ./CoShare-x86_64.rpm` |
-| أي توزيعة (Arch و Manjaro…) | `CoShare-x86_64.AppImage`: `chmod +x` وشغّله |
+| **Windows** | [CoShare-Setup-x64.exe](https://github.com/Devehab/coshare/releases/latest/download/CoShare-Setup-x64.exe) · [ARM](https://github.com/Devehab/coshare/releases/latest/download/CoShare-Setup-arm64.exe) |
+| **Linux** | `curl -fsSL https://devehab.github.io/coshare/install.sh \| bash`, or a [.deb / .rpm / AppImage](https://github.com/Devehab/coshare/releases/latest) |
+| **Android** | [CoShare-android.apk](https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk) ([install guide](https://devehab.github.io/coshare/#android)) |
+| **Mac** | [CoShare-mac.zip](https://devehab.github.io/coshare/downloads/CoShare-mac.zip): first time, right-click → Open (or System Settings → Privacy & Security → Open Anyway) |
+| **iPhone & iPad** | Build it on your Mac in one line, below. |
 
-أجهزة ARM على لينكس: `CoShare-arm64.deb` و `CoShare-aarch64.rpm` و `CoShare-arm64.AppImage`.
+### iPhone and iPad, in one line
 
-- **ويندوز:** أول مرة بيسألك جدار الحماية: اختار **الشبكات الخاصة (Private)**. الملف مش موقّع، فإذا طلعت «Windows protected your PC» اضغط **More info ← Run anyway**.
-- **لينكس:** الـ AppImage ما بيحتاج أي مكتبات إضافية (ولا حتى libfuse2). على GNOME، أيقونة شريط المهام بتحتاج إضافة AppIndicator (موجودة افتراضياً بـ Ubuntu). على Wayland بيشتغل عن طريق XWayland.
-- بيشتغل لحاله مع بدء الجهاز، والنافذة بتتسكّر للخلفية. لتفتحه: من أيقونته، أو شغّله مرة تانية من قائمة البرامج.
-- كل إصدار بيتبنى على GitHub Actions على أجهزة x64 و ARM حقيقية، وبيتجرّب تلقائياً (التشفير مع تطبيقات أبل، والحافظة نص وصور، والشبكة)، وبتتثبّت الحزم على Ubuntu 22.04 و 24.04 و Debian 12 و Fedora 41 قبل النشر.
+CoShare isn't on the App Store yet, so you install it like a developer would, with your own Apple ID (a free one works). Plug the iPhone or iPad into your Mac and run:
 
-**لإعادة البناء محلياً:** `cd desktop && npm ci && npm run natives && npm test && npx electron-builder --linux --x64`.
-
-## ٤) أندرويد
-
-نزّل [`CoShare-android.apk`](https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk) (أندرويد 8 أو أحدث، موبايل وتابلت)، افتحه، واسمح للمتصفح «بتثبيت التطبيقات غير المعروفة» أول مرة. الخطوات بالصور والتفصيل: [دليل التثبيت على الموقع](https://devehab.github.io/coshare/#android).
-
-- أول ما تفتحه بيطلب **الإشعارات** (ليضل شغّال بالخلفية، مع زر «إرسال الحافظة» بالإشعار)، وعلى أندرويد 17 **الأجهزة القريبة** (بدونه ما بيقدر يوصل لأجهزتك على الشبكة).
-- **اللي بيوصلك بينلصق فوراً**، حتى والتطبيق بالخلفية والشاشة مطفية.
-- **للإرسال من الموبايل:** أندرويد 10 وأحدث ما بيسمح لأي تطبيق يقرأ الحافظة وهو بالخلفية. فبعد ما تنسخ: افتح CoShare (بيبعت لحاله)، أو اضغط «إرسال الحافظة» من الإشعار أو من مربّع الإعدادات السريعة، أو من أي تطبيق «مشاركة ← إرسال لأجهزتي» (أو حدّد نص ← «إرسال لأجهزتي»). على أندرويد 8 و 9 بيبعت لحاله متل الماك.
-- **الـ Hotspot:** بيشتغل بالاتجاهين: لابتوب على Hotspot الموبايل، أو الموبايل على Hotspot جهاز تاني.
-- بعض الشركات (شاومي وهواوي وسامسونج…) بتوقّف التطبيقات بالخلفية لتوفير البطارية: الإعدادات ← «استثناء CoShare من توفير البطارية».
-- **لإعادة البناء محلياً** (JDK 17 و Android SDK): `cd android && ./gradlew :core:test :app:assembleRelease`. الاختبارات بتتأكد إنه متوافق بالبايت مع تطبيقات أبل (نفس متجهات Swift)، وبتزامن نص وصور فعلياً مع محرّك الديسكتوب (`desktop/tools/peer.js`)، ومع محرّك Swift كمان إذا بنيت `scripts/test-peer.sh` وحطّيت `COSHARE_SWIFT_PEER=build/tools/TestPeer`.
-- **الإصدار:** tag باسم `android-v1.2.3` ← GitHub Actions بيبني APK موقّع وبينشره، وبيحدّث الرابط الثابت `android-latest` اللي بصفحة التحميل. إصدار الديسكتوب بيضل «الأحدث»، فروابط `releases/latest/download` ما بتتأثر.
-
-## ٥) المجموعات (الأمان)
-
-الجهاز ما بيشارك شي لحتى يكون بمجموعة. من تبويب **«المجموعات»**، أو زر **«المجموعات»** على الآيفون، بتلاقي زرين واضحين وتحتهم مجموعاتك:
-
-- **إنشاء مجموعة:** حط اسم (مثلاً «أجهزة إيهاب») وكلمة سر (٦ أحرف أو أكتر). بعدها بتفتح صفحة المجموعة ومعها رمز QR جاهز لتضيف أجهزتك.
-- **انضمام لمجموعة:** بطريقتين:
-  - **المجموعات القريبة:** قائمة بالمجموعات الظاهرة على نفس الشبكة. اختار وحدة واكتب كلمة سرها.
-  - **مسح رمز QR:** بكاميرا الجهاز (الآيفون أو كاميرا اللابتوب)، بدون ما تكتب كلمة السر.
-- **مجموعاتي:** اضغط على أي مجموعة لتشوف أجهزتها المتصلة مرتّبة، أو **«إظهار رمز QR لإضافة جهاز»**، أو **«مغادرة المجموعة»**.
-- **مرة وحدة بس:** الجهاز بيضل بالمجموعة حتى بعد إعادة التشغيل أو تغيير الشبكة.
-- **أكتر من مجموعة:** الجهاز فيه يكون بأكتر من مجموعة (مثلاً مجموعة للبيت وحدة للشغل)، وكل نسخ بيوصل لكل مجموعاته.
-- **إزالة جهاز:** «مغادرة» من الجهاز نفسه، أو أنشئ مجموعة جديدة بكلمة سر جديدة وانقل أجهزتك إلها.
-
-> كلمة السر ما بتنبعت على الشبكة أبداً. الجهاز بيتحقق منها محلياً، وبيشتق منها مفتاح التشفير (PBKDF2 مملّح بمعرّف المجموعة). يعني الغريب على نفس الواي فاي بيشوف اسم المجموعة بس، وما بيوصله شي.
-
-**الـ Hotspot والشبكات اللي بتمنع الاكتشاف:** كل جهاز بيستقبل على المنفذ الثابت **47331**، وبيسلّم مباشرة على الـ gateway وعلى العناوين اللي شافها قبل. هيك اللابتوب المشبوك على Hotspot التلفون بيلاقي التلفون، حتى لو Bonjour ما اشتغل.
-
-## ٦) أوقات الإيقاف (جهاز الشغل)
-
-من الإعدادات ← **«إيقاف تلقائي بأوقات محددة»** اختار الأيام والساعات (مثلاً من الإثنين للجمعة، من ٩ لـ ٥).
-
-- **خلال هالأوقات CoShare بيختفي كلياً على هالجهاز:** ما بيقرأ الحافظة، ولا بيبعت ولا بيستقبل، ولا بيفتح منفذ، ولا بيظهر على Bonjour.
-- **أجهزتك التانية بتعرف جدوله** (وبتوصلها رسالة «وداع» بأول الوقت)، فما بتحاول تتصل فيه.
-- **اللي بتنسخه خلال الوقت بيضل على الجهاز:** ما بينبعت بعد ما يخلص الوقت، وما بيوصله شي من وقت الإيقاف.
-- **«استئناف اليوم»:** بيرجّعه لباقي اليوم بس، والجدول بيرجع يشتغل عادي بالمرة الجاية.
-- **زر الإيقاف ⏸:** هلق كمان بيفصله كلياً عن الشبكة لحد ما تضغط استئناف.
-
-## ٧) اختصارات بتوفّر عليك كتير (آيفون)
-
-بعد أول تشغيل، تطبيق **الاختصارات** بتصير فيه إجراءات CoShare جاهزة:
-
-| الإجراء | شو بيعمل |
-|---|---|
-| **إرسال الحافظة للأجهزة** | بيبعت اللي بالحافظة الحالية لكل الأجهزة |
-| **إرسال نص للأجهزة** | بيبعت نص معيّن، ومعه خيار «الكود فقط» لاستخراج رمز التحقق |
-| **جلب آخر نسخ من الأجهزة** | بيجيب آخر نسخ من الماك لحافظة الآيفون |
-
-- **نقر مزدوج على ظهر التلفون ← إرسال:** الإعدادات ← تسهيلات الاستخدام ← اللمس ← النقر على الظهر ← نقر مزدوج ← «إرسال الحافظة للأجهزة».
-- **أكواد التحقق لحالها على الماك:** الاختصارات ← أتمتة ← ➕ ← **رسالة** ← «الرسالة تحتوي» `code` ← **تشغيل فوري** ← إجراء «إرسال نص للأجهزة»: النص = *الرسالة*، و«الكود فقط» = تشغيل. اعمل أتمتة تانية لكلمة `رمز`. هيك أول ما توصل رسالة الكود، بيصير الكود بحافظة كل الماكات.
-- **بعد إعادة تشغيل الآيفون:** افتح CoShare مرة. أو اعمل أتمتة «عند الانضمام لشبكة واي فاي (شبكتك)» ← **فتح التطبيق** CoShare.
-- زر **Action** (آيفون 15 Pro وأحدث) و **مركز التحكم** بيقبلوا نفس الاختصارات.
-
-## الحدود الحقيقية، بصراحة
-
-- **iOS ما بيسمح لأي تطبيق يضل شغّال بالخلفية للأبد.** CoShare بيستخدم صوت صامت (background audio) ليضل صاحي. هالشي شغّال تمام لتطبيق شخصي، بس أبل ما بتقبله على App Store، وفي إله حدود:
-  - إذا سكّرت التطبيق بالسحب، أو بعد ما تعيد تشغيل التلفون، لازم تفتحه مرة.
-  - مكالمة أو تطبيق صوت ممكن يوقّفه مؤقتاً. بيرجع لحاله، وإذا ما رجع افتح التطبيق.
-  - بيصرف شوية بطارية.
-- لما يكون التطبيق متوقف عن الخلفية: أول ما تفتحه بيجيب آخر نسخ من الماك لحاله، والنسخ من الآيفون بتبعته بنقرة على ظهر التلفون.
-- **الأجهزة لازم تكون على نفس الشبكة.** بشبكات الفنادق والمكاتب اللي فيها «Client/AP Isolation»، الأجهزة ما بتقدر تشوف بعضها.
-- **أندرويد ١٠ وأحدث ما بيخلّي أي تطبيق يقرأ الحافظة وهو بالخلفية.** الاستقبال فوري، بس الإرسال من الموبايل بيصير لما تفتح CoShare أو تضغط «إرسال الحافظة» (الإشعار أو الإعدادات السريعة) أو «مشاركة ← إرسال لأجهزتي».
-- أكبر حجم لصورة: ٤٠ ميغا. الملفات العادية (PDF وغيرها) مش مدعومة، بس الصور والنصوص.
-- إذا أجهزتك على نفس الـ Apple ID، الـ Universal Clipboard تبع أبل بيضل شغّال كمان. أحياناً بيوصل النسخ للتلفون عن طريقه قبل CoShare، فبيطلع بسجل الآيفون إنه «من هذا الجهاز». CoShare بيمنع اللصق المكرر، بس فيك تطفي Handoff إذا حابب (إعدادات النظام ← عام ← AirDrop و Handoff).
-
-## إذا ما اشتغل
-
-1. **الأجهزة:** تبويب «المجموعات» ← افتح المجموعة. لازم تكون الأجهزة **بالأخضر**.
-2. **السجل:** تبويب «السجل» فيه كل إرسال واستقبال وخطأ صار (لمدة الاحتفاظ اللي اخترتها).
-3. **الإذن:** إعدادات النظام ← الخصوصية والأمان ← **الشبكة المحلية** ← CoShare مفعّل (على الماك والآيفون). على ويندوز: جدار الحماية لازم يسمح لـ CoShare على الشبكات الخاصة. على أندرويد 17: الإعدادات ← التطبيقات ← CoShare ← الأذونات ← **الأجهزة القريبة**.
-4. اضغط زر **«إعادة الاتصال»** من الإعدادات.
-
-## صفحة الهبوط
-
-بمجلد `website/`، وهي صفحة ثابتة: `index.html` و `styles.css` و `app.js` و `assets/`.
-**بتنشر لحالها على GitHub Pages** عند كل push على `main` (عن طريق `.github/workflows/pages.yml`)، على الرابط https://devehab.github.io/coshare/
-
-- **اللغة:** عربي/إنجليزي بزر بالأعلى، وأول مرة بتختار حسب لغة المتصفح.
-- **التحميل:** الصفحة بتعرف نظام الزائر وبتعلّم زر التحميل المناسب. روابط التحميل بمجلد `website/downloads/`:
-  - `CoShare-mac.zip`: موجود.
-  - ويندوز ولينكس: من آخر إصدار على GitHub (`releases/latest/download/...`).
-  - أندرويد: الرابط الثابت `releases/download/android-latest/CoShare-android.apk`، اللي بيتحدّث مع كل tag `android-v*`.
-  - `CoShare-ios`: **لسا مش موجود**. لحد ما ينضاف، زر التحميل بيعرض للزائر «قيد التجهيز، قريباً» بدل صفحة خطأ. وللآيفون عادة بيكون رابط TestFlight أو App Store بدل ملف.
-- **الفيديو:** `website/assets/video/coshare-intro-ar.mp4` و `-en.mp4` مع صور الغلاف.
-
-لمعاينتها محلياً:
 ```bash
-python3 -m http.server 8765 --directory website
+curl -fsSL https://devehab.github.io/coshare/install-ios.sh | bash
 ```
 
-## الفيديو التعريفي
+It installs Xcode if it's missing and checks every step: license, Apple ID, the cable, "Trust This Computer", Developer Mode. Then it builds CoShare from source, installs it and opens it. When something is off it tells you exactly what to tap, and continues by itself once you have. [Step-by-step guide →](https://devehab.github.io/coshare/ios.html)
 
-- **النص** (عربي وإنجليزي، جاهز لـ ElevenLabs، مع التوقيت والمؤثرات): [video/SCRIPT.md](video/SCRIPT.md)
-- **الأنيميشن:** `video/animation/index.html`. افتحه بالمتصفح وفيه شريط تحكم؛ ولتغيير اللغة ضيف `?lang=ar` أو `?lang=en`.
-- **إعادة الرندر** (بعد أي تعديل على الأنيميشن): `video/render.sh`
-- **التعليق الصوتي:** ملفات ElevenLabs موجودة بـ `video/voice/`، وتوقيت كل مشهد عليها بـ `video/voice/timings.json`. `video/render.sh` بيعيد توقيت الأنيميشن على الصوت وبيدمجهم لحاله.
-- **إضافة صوت جديد يدوياً** (أو موسيقى):
+With a free Apple ID, apps you sign yourself run for 7 days. Run the same line again to renew; your groups and history stay.
+
+### "Is this download safe?"
+
+Browsers and systems warn about apps that aren't sold through their stores or signed with a paid certificate. That says nothing about the code:
+
+- The code is right here. The Windows, Linux and Android builds are made from it by GitHub Actions, in public. [See the builds](https://github.com/Devehab/coshare/actions).
+- Every release lists a SHA-256 fingerprint for each file, on the release page and in `SHA256SUMS.txt`, so you can check a download is the same file, byte for byte:
   ```bash
-  video/mux.sh ar voice-ar.mp3 music.mp3
+  shasum -a 256 CoShare-Setup-x64.exe
   ```
-  الموسيقى اختيارية، وبتنخفض لحالها تحت الصوت.
+- New Windows, Linux and Android releases also carry a GitHub build attestation, which proves a file was built by this repository's workflow from a specific commit:
+  ```bash
+  gh attestation verify CoShare-Setup-x64.exe --repo Devehab/coshare
+  ```
 
-## بنية المشروع
+## Roadmap, and how you can help
+
+CoShare is a small, documented protocol ([PROTOCOL.md](docs/PROTOCOL.md)) with an app per platform. Bringing it somewhere new means implementing one page and passing one test vector, and the existing apps don't need to change. Ideas we'd love help with:
+
+- [ ] **Store releases.** App Store, Google Play, Microsoft Store, Flathub, Snapcraft. The MIT license lets you publish it under your own account; [tell us](https://github.com/Devehab/coshare/issues/new?template=store-release.yml) and we'll link it from the website.
+- [ ] **New systems.** ChromeOS, HarmonyOS, FreeBSD, Linux phones, a command-line peer for servers (`coshare send`, `coshare watch`).
+- [ ] **Files.** PDFs and documents, not just text and images.
+- [ ] **Search and pins** in the history.
+- [ ] **More languages.** The apps speak Arabic and English today.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to build any app in a few minutes.
+
+## Repository
 
 ```
-Shared/            محرّك المزامنة المشترك: الشبكة والتشفير والسجل والواجهات المشتركة
-macOS/             تطبيق شريط القوائم
-iOS/               تطبيق الآيفون/الآيباد والعمل بالخلفية واختصارات Siri
-desktop/           تطبيق ويندوز ولينكس (Electron)، متوافق بالبايت مع تطبيقات أبل
-android/core       البروتوكول والشبكة والمزامنة لأندرويد بـ Kotlin، مع اختبارات JVM (متجهات Swift ومزامنة مع الديسكتوب)
-android/app        تطبيق أندرويد (Jetpack Compose): الواجهة والحافظة و NSD والخدمة بالخلفية
-.github/workflows/desktop.yml   بناء وتجربة ونشر حزم ويندوز ولينكس
-.github/workflows/android.yml   بناء وتجربة أندرويد، ونشر APK موقّع مع كل tag `android-v*`
-Config/            ملفات Info.plist والأيقونة
-scripts/build-mac.sh   بناء تطبيق الماك بدون Xcode
-scripts/test-peer.sh   «تلفون وهمي» على الماك لاختبار المزامنة بدون جهاز
-Tools/Snapshot     يرسم صور لنافذة الماك للتحقق من التصميم
-website/           صفحة الهبوط
-video/             نص الفيديو، الأنيميشن، الرندر ودمج الصوت
+Shared/     Swift sync engine shared by the iPhone, iPad and Mac apps
+iOS/        iPhone and iPad app (SwiftUI)
+macOS/      Mac menu-bar app (SwiftUI, AppKit on macOS 12)
+desktop/    Windows and Linux app (Electron), byte-compatible with the Swift engine
+android/    Android app (Kotlin, Jetpack Compose)
+docs/       The protocol
+website/    devehab.github.io/coshare, plus the one-line installers
 ```
 
-**طريقة العمل:** كل جهاز بيفتح منفذ استقبال وبيعلن عن حاله بـ Bonjour (`_coshare._tcp`). لما تنسخ شي، بينبعت مباشرة ومشفّر لكل جهاز بنفس المجموعة. ولما يرجع جهاز للشبكة، بيسأل الباقيين عن آخر نسخ، وبياخده بس إذا كان أحدث من اللي عنده.
+Every push is tested on GitHub Actions: unit tests, live sync between the Swift, Node and Kotlin engines, installation on clean Ubuntu, Debian, Fedora and Rocky, and the Windows installer.
+
+## License
+
+[MIT](LICENSE). Use it, change it, ship it, publish it. If CoShare saves you time, a ⭐ helps others find it.

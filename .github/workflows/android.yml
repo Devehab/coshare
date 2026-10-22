@@ -95,6 +95,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/android-v')
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -103,18 +107,29 @@ jobs:
           path: dl
       - name: Find the APK
         run: cp "$(find dl -name CoShare-android.apk | head -1)" CoShare-android.apk && ls -la CoShare-android.apk
+      - name: Fingerprint (SHA256SUMS.txt)
+        run: sha256sum CoShare-android.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+      # Proof the APK was built here, from this commit: gh attestation verify CoShare-android.apk --repo Devehab/coshare
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: CoShare-android.apk
 
       - uses: softprops/action-gh-release@v2
         with:
           name: CoShare for Android ${{ github.ref_name }}
           make_latest: false
-          files: CoShare-android.apk
+          files: |
+            CoShare-android.apk
+            SHA256SUMS.txt
           body: |
             **CoShare for Android** — one clipboard for all your devices. Local network only, end-to-end encrypted, any account.
 
             Android 8 or later, phones and tablets. Download `CoShare-android.apk`, open it and allow installing from your browser.
             The newest Android build is always at
             https://github.com/Devehab/coshare/releases/download/android-latest/CoShare-android.apk
+
+            **Check the download:** compare it with `SHA256SUMS.txt`, or prove it was built here from this code:
+            `gh attestation verify CoShare-android.apk --repo Devehab/coshare`
 
       - name: Update the fixed "android-latest" link
         env:
@@ -127,9 +142,9 @@ jobs:
           if gh release view android-latest > /dev/null 2>&1; then
             # Move the tag to this build, then swap the file; the download link stays the same.
             git push -f origin "$GITHUB_SHA:refs/tags/android-latest"
-            gh release upload android-latest CoShare-android.apk --clobber
+            gh release upload android-latest CoShare-android.apk SHA256SUMS.txt --clobber
             gh release edit android-latest --title "$title" --notes "$notes" --latest=false
           else
-            gh release create android-latest CoShare-android.apk --target "$GITHUB_SHA" \
+            gh release create android-latest CoShare-android.apk SHA256SUMS.txt --target "$GITHUB_SHA" \
               --title "$title" --notes "$notes" --latest=false
           fi

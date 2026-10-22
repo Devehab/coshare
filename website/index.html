@@ -78,6 +78,7 @@
         <a href="#faq" data-i18n="nav.faq">الأسئلة</a>
       </nav>
       <div class="nav-actions">
+        <a class="gh-btn" href="https://github.com/Devehab/coshare" rel="noopener" aria-label="CoShare on GitHub"><svg aria-hidden="true"><use href="#i-github"/></svg><span>GitHub</span></a>
         <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">English</button>
         <a class="btn btn-primary btn-sm" href="#download" data-i18n="nav.cta">حمّل مجاناً</a>
         <button class="menu-btn" id="menuBtn" type="button" aria-label="القائمة" aria-expanded="false" aria-controls="mobileMenu">
@@ -90,6 +91,7 @@
       <a href="#security" data-i18n="nav.security">الأمان</a>
       <a href="#features" data-i18n="nav.features">الميزات</a>
       <a href="#faq" data-i18n="nav.faq">الأسئلة</a>
+      <a href="#opensource" data-i18n="nav.open">مفتوح المصدر</a>
       <a href="privacy.html" data-i18n="nav.privacy">سياسة الخصوصية</a>
       <a class="btn btn-primary" href="#download"><svg><use href="#i-download"/></svg><span data-i18n="nav.cta">حمّل مجاناً</span></a>
     </nav>
@@ -502,8 +504,8 @@
             <div class="os-icon"><svg><use href="#i-phone"/></svg></div>
             <h3>iPhone &amp; iPad</h3>
             <div class="req" data-i18n="dl.ios.req">iOS و iPadOS 15 أو أحدث</div>
-            <a class="btn btn-primary btn-sm" href="downloads/CoShare-ios" data-platform="ios"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
-            <div class="dl-alt" aria-hidden="true"></div>
+            <a class="btn btn-primary btn-sm" href="#ios"><svg><use href="#i-download"/></svg><span data-i18n="dl.ios.btn">ثبّته من الماك</span></a>
+            <div class="dl-alt"><a href="ios.html" data-i18n="dl.ios.guide">الدليل الكامل</a></div>
           </div>
           <div class="card dl-card reveal d1" data-os="mac">
             <span class="badge" data-i18n="dl.rec">لجهازك</span>
@@ -511,7 +513,7 @@
             <h3>Mac</h3>
             <div class="req" data-i18n="dl.mac.req">macOS 12 أو أحدث · Apple Silicon و Intel</div>
             <a class="btn btn-primary btn-sm" href="downloads/CoShare-mac.zip" download data-platform="mac"><svg><use href="#i-download"/></svg><span data-i18n="dl.btn">تحميل</span></a>
-            <div class="dl-alt" aria-hidden="true"></div>
+            <div class="dl-alt"><a href="#faqSafe" data-i18n="dl.mac.alt">أول مرة: كليك يمين ← فتح</a></div>
           </div>
           <div class="card dl-card reveal d2" data-os="android">
             <span class="badge" data-i18n="dl.rec">لجهازك</span>
@@ -536,6 +538,40 @@
             <div class="req" data-i18n="dl.linux.req">Ubuntu و Debian و Mint و Fedora وكل التوزيعات</div>
             <a class="btn btn-primary btn-sm" href="#linux"><svg><use href="#i-download"/></svg><span data-i18n="dl.linux.btn">تثبيت بأمر واحد أو حزمة</span></a>
             <div class="dl-alt"><span data-i18n="dl.linux.alt">‎.deb · ‎.rpm · AppImage</span></div>
+          </div>
+        </div>
+
+        <div class="card linux-panel ios-panel reveal" id="ios">
+          <div class="lp-head">
+            <div class="os-icon"><svg><use href="#i-phone"/></svg></div>
+            <div>
+              <h3 data-i18n="io.title">CoShare على الآيفون والآيباد</h3>
+              <p data-i18n="io.sub">لسا مش على App Store، فبتثبّته متل المطورين: من الماك، بحساب Apple تبعك، حتى لو مجاني.</p>
+            </div>
+          </div>
+          <div class="lp-grid">
+            <div class="lp-option lp-recommended">
+              <span class="lp-tag" data-i18n="io.tag">سطر واحد</span>
+              <h4 data-i18n="io.cmd.title">وصّل الجهاز بالماك، وشغّل بالتيرمينال</h4>
+              <div class="cmd" dir="ltr"><code id="iosCmd">curl -fsSL https://devehab.github.io/coshare/install-ios.sh | bash</code><button class="copy-btn" type="button" data-copy="iosCmd" data-i18n="lx.copy">نسخ</button></div>
+              <ul class="lp-steps">
+                <li data-i18n="io.s1">بيثبّت Xcode إذا مش موجود، وبيقبل رخصته ومكوّناته</li>
+                <li data-i18n="io.s2">بينزّل الكود من GitHub، وبيلاقي حساب Apple تبعك بـ Xcode</li>
+                <li data-i18n="io.s3">بيستنى الجهاز يكون موصول وواثق بالماك ووضع المطور مفعّل، وبيقلّك وين تضغط</li>
+                <li data-i18n="io.s4">بيبني CoShare وبيوقّعه وبيثبّته وبيفتحه، وإذا صار خطأ بيصلّح اللي بيقدر عليه وبيرجع يحاول</li>
+              </ul>
+              <a class="btn btn-ghost btn-sm io-guide" href="ios.html" data-i18n="io.guide">الدليل الكامل خطوة بخطوة</a>
+            </div>
+            <div class="lp-option">
+              <h4 data-i18n="io.need.title">شو بتحتاج</h4>
+              <ul class="lp-steps">
+                <li data-i18n="io.n1">ماك، وكابل للآيفون أو الآيباد</li>
+                <li data-i18n="io.n2">iOS أو iPadOS 15 أو أحدث</li>
+                <li data-i18n="io.n3">Apple ID، والمجاني بيكفي: بيوقّع التطبيق ٧ أيام، ونفس السطر بيجدّده ومجموعاتك بتضل</li>
+              </ul>
+              <h4 class="io-store" data-i18n="io.store.title">بدك تنشره على App Store؟</h4>
+              <p class="ad-text" data-i18n="io.store.p">من حقك، الكود برخصة MIT. انشره بحسابك، و<a href="https://github.com/Devehab/coshare/issues/new?template=store-release.yml" rel="noopener">خبّرنا</a> لنحط رابطه هون ويثبّته الناس بضغطة.</p>
+            </div>
           </div>
         </div>
 
@@ -610,7 +646,7 @@
             </div>
           </div>
         </div>
-        <p class="dl-note reveal" data-i18n="dl.note">الإصدار 1.0 · مجاني · بدون حساب · بدون إعلانات</p>
+        <p class="dl-note reveal" data-i18n="dl.note">الإصدار 1.0 · مجاني · مفتوح المصدر · بدون حساب · بدون إعلانات</p>
       </div>
     </section>
 
@@ -633,12 +669,43 @@
           <details class="reveal"><summary data-i18n="faq.q8">هل يمكن أن يكون الجهاز في أكثر من مجموعة؟</summary><p data-i18n="faq.a8">نعم. مثلاً مجموعة لأجهزتك الشخصية وأخرى لأجهزة العمل؛ ما تنسخه يصل لكل المجموعات التي ينتمي لها الجهاز. ولإزالة جهاز، غادر المجموعة منه، أو أنشئ مجموعة جديدة بكلمة سر جديدة وانقل أجهزتك إليها.</p></details>
           <details class="reveal"><summary data-i18n="faq.q10">هل أستطيع إيقافه خلال ساعات العمل على جهاز الشركة؟</summary><p data-i18n="faq.a10">نعم. من الإعدادات فعّل «إيقاف تلقائي بأوقات محددة» واختر الأيام والساعات. خلالها لا يقرأ CoShare الحافظة ولا يرسل ولا يستقبل ولا يظهر على الشبكة إطلاقاً، وأجهزتك الأخرى تعرف جدوله فلا تحاول الاتصال به. ولو انتهى العمل مبكراً اضغط «استئناف اليوم».</p></details>
           <details class="reveal"><summary data-i18n="faq.q11">كيف أعرف أن جهازاً انقطع عن المجموعة؟</summary><p data-i18n="faq.a11">يصلك إشعار عندما يتصل جهاز من مجموعاتك أو ينقطع، ومعه السبب إن كان معروفاً: خرج من الشبكة أو نام، أو دخل وقت الإيقاف، أو أوقف المشاركة. الانقطاع لثوانٍ لا يرسل شيئاً. ومن الإعدادات تشغّل الإشعارات أو توقفها، أو تختار إشعارات الدخول فقط أو الخروج فقط. على الآيفون تعمل ما دام «العمل الدائم بالخلفية» مفعّلاً.</p></details>
+          <details class="reveal" id="faqSafe"><summary data-i18n="faq.q12">لماذا يحذّرني المتصفح أو النظام عند تنزيل CoShare؟</summary><p data-i18n="faq.a12">لأن CoShare لا يُوزَّع عبر متجر ولا يحمل شهادة توقيع مدفوعة، فيعامله Chrome و Windows و macOS و Android كبرنامج «غير معروف». هذا التحذير يظهر لأي تطبيق مستقل، ولا يعني أن فيه شيئاً: الكود كله مفتوح على GitHub، وكل ملف يُبنى علناً من هذا الكود عبر GitHub Actions، ومع الإصدارات ملف SHA256SUMS.txt للتحقق من أن ما نزّلته هو نفسه بالبايت. للمتابعة: على الماك أول مرة كليك يمين ← «فتح» (أو إعدادات النظام ← الخصوصية والأمن ← «فتح على أي حال»)، وعلى Windows «مزيد من المعلومات» ← «تشغيل على أي حال»، وفي Chrome «الاحتفاظ»، وعلى Android «التثبيت على أي حال».</p></details>
+          <details class="reveal"><summary data-i18n="faq.q13">هل CoShare مفتوح المصدر؟ وهل أستطيع نشره على متجر؟</summary><p data-i18n="faq.a13">نعم. الكود كله على <a href="https://github.com/Devehab/coshare" rel="noopener">GitHub</a> برخصة MIT: اقرأه، عدّله، ابنِه بنفسك، أو انشره على App Store أو Google Play أو غيرهما بحسابك. وإذا نشرته <a href="https://github.com/Devehab/coshare/issues/new?template=store-release.yml" rel="noopener">أخبرنا</a> لنضع رابطه هنا.</p></details>
           <details class="reveal"><summary data-i18n="faq.q9">كم جهازاً أستطيع ربطه؟</summary><p data-i18n="faq.a9">لا يوجد حد عملي. لابتوبات وهواتف وتابلت معاً، كلها تستقبل في اللحظة نفسها.</p></details>
         </div>
       </div>
     </section>
 
     <!-- ================= FINAL CTA ================= -->
+    <section class="section" id="opensource">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker" data-i18n="os.kicker">مفتوح المصدر</span>
+          <h2 data-i18n="os.title">مبني على المكشوف، <span class="mark">ومفتوح للجميع</span></h2>
+          <p data-i18n="os.sub">كل نظام يربط المزامنة بعالمه وحسابه، وهذا مفهوم. CoShare لا ينافس أحداً، بل يبني جسراً بسيطاً بين كل أجهزتك أياً كان صانعها. وكل سطر منه على GitHub برخصة MIT.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card feature-card reveal"><div class="icon-tile"><svg><use href="#i-github"/></svg></div><h3 data-i18n="os.c1.t">الكود كله أمامك</h3><p data-i18n="os.c1.p">كل إصدار يُبنى علناً من هذا الكود عبر GitHub Actions ويُختبر على كل الأنظمة. اقرأه، ابنِه بنفسك، وحسّنه.</p></div>
+          <div class="card feature-card reveal d1"><div class="icon-tile"><svg><use href="#i-devices"/></svg></div><h3 data-i18n="os.c2.t">يصل إلى أي نظام</h3><p data-i18n="os.c2.p">البروتوكول صفحة واحدة موثّقة مع متّجه اختبار. أي مطوّر يستطيع بناء نسخة لنظام جديد تعمل مع كل الأجهزة الحالية دون تغيير فيها.</p></div>
+          <div class="card feature-card reveal d2"><div class="icon-tile"><svg><use href="#i-gift"/></svg></div><h3 data-i18n="os.c3.t">انشره على أي متجر</h3><p data-i18n="os.c3.p">الرخصة تسمح لك بنشره على App Store أو Google Play أو Microsoft Store بحسابك. أخبرنا، ونضع رابطه هنا ليثبّته الناس بضغطة.</p></div>
+        </div>
+        <div class="roadmap reveal">
+          <h3 data-i18n="os.next">القادم، وأي يد تساعد مرحّب بها</h3>
+          <ul>
+            <li data-i18n="os.r1">ملفات من كل الأنواع (PDF ومستندات)، لا نصوص وصور فقط</li>
+            <li data-i18n="os.r2">أنظمة جديدة: ChromeOS و HarmonyOS و FreeBSD، وأداة سطر أوامر للخوادم</li>
+            <li data-i18n="os.r3">نسخ على المتاجر: App Store و Google Play و Microsoft Store و Flathub</li>
+            <li data-i18n="os.r4">بحث وتثبيت في السجل، ولغات أكثر من العربية والإنجليزية</li>
+          </ul>
+        </div>
+        <div class="os-ctas reveal">
+          <a class="btn btn-primary" href="https://github.com/Devehab/coshare" rel="noopener"><svg><use href="#i-github"/></svg><span data-i18n="os.star">ضع نجمة على GitHub ⭐</span></a>
+          <a class="btn btn-ghost" href="https://github.com/Devehab/coshare/blob/main/CONTRIBUTING.md" rel="noopener"><span data-i18n="os.contrib">كيف تساهم</span></a>
+          <a class="btn btn-ghost" href="https://github.com/Devehab/coshare/blob/main/docs/PROTOCOL.md" rel="noopener"><span data-i18n="os.protocol">البروتوكول</span></a>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="container">
         <div class="final-cta reveal">

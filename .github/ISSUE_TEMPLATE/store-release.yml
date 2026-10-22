@@ -1,0 +1,33 @@
+name: "I published CoShare on a store"
+description: Tell us about your App Store, Google Play or other release so we can link it from the website.
+title: "Store release: "
+labels: ["store-release"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! 🎉 We'll check it and add a link on https://devehab.github.io/coshare/ so people can install it in one tap.
+  - type: input
+    id: link
+    attributes:
+      label: Store link
+      placeholder: https://apps.apple.com/app/…
+    validations:
+      required: true
+  - type: dropdown
+    id: store
+    attributes:
+      label: Store
+      options: [App Store (iPhone / iPad), Mac App Store, Google Play, Microsoft Store, Flathub, Snapcraft, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Based on CoShare version or commit
+      placeholder: desktop-v1.0.3, or a commit hash
+  - type: textarea
+    id: changes
+    attributes:
+      label: Anything you changed?
+      description: e.g. removed the silent-audio background mode for App Review, a different name or icon.
