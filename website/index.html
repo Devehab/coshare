@@ -52,6 +52,7 @@
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9.5" r="1.6" fill="currentColor"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
     <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5.5h16v10.5H9l-5 4V5.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10.5h1.5M11.3 10.5h1.5M14.6 10.5h1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M10 21h4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
     <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M7.2 6.2a7.5 7.5 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
     <symbol id="i-devices" viewBox="0 0 24 24"><rect x="2.5" y="5" width="13" height="9" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M1.5 17h15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="17" y="8" width="5.5" height="11" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
@@ -315,7 +316,7 @@
           <div class="feature-list">
             <div class="feature-item reveal">
               <div class="icon-tile"><svg><use href="#i-radar"/></svg></div>
-              <div><h4 data-i18n="net.f1.t">اكتشاف تلقائي</h4><p data-i18n="net.f1.p">تتعرّف أجهزتك على بعضها عبر Bonjour (mDNS) على نفس شبكة الواي فاي، دون أي إعداد أو عناوين IP.</p></div>
+              <div><h4 data-i18n="net.f1.t">اكتشاف تلقائي</h4><p data-i18n="net.f1.p">تتعرّف أجهزتك على بعضها عبر Bonjour (mDNS) على نفس شبكة الواي فاي، دون أي إعداد أو عناوين IP، وتجد بعضها من جديد خلال ثوانٍ بعد أي تغيّر في الشبكة.</p></div>
             </div>
             <div class="feature-item reveal d1">
               <div class="icon-tile"><svg><use href="#i-bolt"/></svg></div>
@@ -446,13 +447,13 @@
         </div>
         <div class="grid-4">
           <div class="card feature-card highlight reveal"><div class="icon-tile"><svg><use href="#i-message"/></svg></div><h3 data-i18n="feat.f1.t">أكواد التحقق تلقائياً</h3><p data-i18n="feat.f1.p">وصلك رمز OTP على الهاتف؟ يصل إلى حافظة اللابتوب لحظة وصول الرسالة. فقط الصق.</p></div>
-          <div class="card feature-card reveal d1"><div class="icon-tile"><svg><use href="#i-image"/></svg></div><h3 data-i18n="feat.f2.t">صور بجودة كاملة</h3><p data-i18n="feat.f2.p">لقطات الشاشة والصور تصل كما هي، بايتاً ببايت. بدون ضغط ولا تشويه.</p></div>
-          <div class="card feature-card reveal d2"><div class="icon-tile"><svg><use href="#i-clock"/></svg></div><h3 data-i18n="feat.f3.t">سجل يمحو نفسه</h3><p data-i18n="feat.f3.p">ارجع لأي شيء نسخته، وانسخه من جديد بنقرة. يُحذف تلقائياً بعد يوم، أو المدة التي تختارها حتى أسبوع.</p></div>
-          <div class="card feature-card reveal d3"><div class="icon-tile"><svg><use href="#i-power"/></svg></div><h3 data-i18n="feat.f4.t">يعمل في الخلفية</h3><p data-i18n="feat.f4.p">لا تحتاج لفتح التطبيق. يعمل بصمت، ويبدأ وحده مع تشغيل الجهاز.</p></div>
-          <div class="card feature-card reveal"><div class="icon-tile"><svg><use href="#i-moon"/></svg></div><h3 data-i18n="feat.f5.t">أوقات إيقاف تلقائية</h3><p data-i18n="feat.f5.p">حدّد أيام وساعات العمل، فيختفي CoShare تماماً عن الشبكة على جهاز العمل خلالها. وارجعه متى شئت بضغطة «استئناف اليوم».</p></div>
-          <div class="card feature-card reveal d1"><div class="icon-tile"><svg><use href="#i-devices"/></svg></div><h3 data-i18n="feat.f6.t">أجهزة بلا حدود</h3><p data-i18n="feat.f6.p">خمسة لابتوبات وثلاثة هواتف؟ كلها حافظة واحدة، وكلها تستقبل في اللحظة نفسها.</p></div>
-          <div class="card feature-card reveal d2"><div class="icon-tile"><svg><use href="#i-user-x"/></svg></div><h3 data-i18n="feat.f7.t">أي حساب</h3><p data-i18n="feat.f7.p">Apple ID مختلف؟ حساب Google مختلف؟ لا يهم. CoShare لا يسأل عن حسابك أصلاً.</p></div>
-          <div class="card feature-card reveal d3"><div class="icon-tile"><svg><use href="#i-gift"/></svg></div><h3 data-i18n="feat.f8.t">مجاني وبلا تسجيل</h3><p data-i18n="feat.f8.p">لا حساب، لا بريد إلكتروني، لا اشتراك، لا إعلانات.</p></div>
+          <div class="card feature-card reveal d1"><div class="icon-tile"><svg><use href="#i-bell"/></svg></div><h3><span data-i18n="feat.f9.t">إشعارات الأجهزة</span> <span class="new-tag" data-i18n="feat.new">جديد</span></h3><p data-i18n="feat.f9.p">اعرف فوراً متى ينضم جهاز لمجموعتك أو يعود، ومتى يخرج ولماذا: انقطع عن الشبكة أو دخل وقت الإيقاف. وتختار أنت أي الإشعارات تصلك.</p></div>
+          <div class="card feature-card reveal d2"><div class="icon-tile"><svg><use href="#i-image"/></svg></div><h3 data-i18n="feat.f2.t">صور بجودة كاملة</h3><p data-i18n="feat.f2.p">لقطات الشاشة والصور تصل كما هي، بايتاً ببايت. بدون ضغط ولا تشويه.</p></div>
+          <div class="card feature-card reveal d3"><div class="icon-tile"><svg><use href="#i-clock"/></svg></div><h3 data-i18n="feat.f3.t">سجل يمحو نفسه</h3><p data-i18n="feat.f3.p">ارجع لأي شيء نسخته، وانسخه من جديد بنقرة. يُحذف تلقائياً بعد يوم، أو المدة التي تختارها حتى أسبوع.</p></div>
+          <div class="card feature-card reveal"><div class="icon-tile"><svg><use href="#i-power"/></svg></div><h3 data-i18n="feat.f4.t">يعمل في الخلفية</h3><p data-i18n="feat.f4.p">لا تحتاج لفتح التطبيق. يعمل بصمت، ويبدأ وحده مع تشغيل الجهاز.</p></div>
+          <div class="card feature-card reveal d1"><div class="icon-tile"><svg><use href="#i-moon"/></svg></div><h3 data-i18n="feat.f5.t">أوقات إيقاف تلقائية</h3><p data-i18n="feat.f5.p">حدّد أيام وساعات العمل، فيختفي CoShare تماماً عن الشبكة على جهاز العمل خلالها. وارجعه متى شئت بضغطة «استئناف اليوم».</p></div>
+          <div class="card feature-card reveal d2"><div class="icon-tile"><svg><use href="#i-devices"/></svg></div><h3 data-i18n="feat.f6.t">أجهزة بلا حدود</h3><p data-i18n="feat.f6.p">خمسة لابتوبات وثلاثة هواتف؟ كلها حافظة واحدة، وكلها تستقبل في اللحظة نفسها.</p></div>
+          <div class="card feature-card reveal d3"><div class="icon-tile"><svg><use href="#i-user-x"/></svg></div><h3 data-i18n="feat.f7.t">أي حساب، وبلا تسجيل</h3><p data-i18n="feat.f7.p">Apple ID مختلف؟ حساب Google مختلف؟ لا يهم. لا حساب ولا بريد ولا اشتراك ولا إعلانات، ومجاني بالكامل.</p></div>
         </div>
       </div>
     </section>
@@ -631,6 +632,7 @@
           <details class="reveal"><summary data-i18n="faq.q7">أين تُحفظ النسخ؟ ومتى تُحذف؟</summary><p data-i18n="faq.a7">على أجهزتك فقط. افتراضياً تُحذف النسخ وصورها بعد يوم واحد، ومن الإعدادات تختار المدة: ساعة، ١٢ ساعة، يوم، ٣ أيام أو أسبوع كحد أقصى. لا نسخة على أي خادم، لأنه ببساطة لا يوجد خادم.</p></details>
           <details class="reveal"><summary data-i18n="faq.q8">هل يمكن أن يكون الجهاز في أكثر من مجموعة؟</summary><p data-i18n="faq.a8">نعم. مثلاً مجموعة لأجهزتك الشخصية وأخرى لأجهزة العمل؛ ما تنسخه يصل لكل المجموعات التي ينتمي لها الجهاز. ولإزالة جهاز، غادر المجموعة منه، أو أنشئ مجموعة جديدة بكلمة سر جديدة وانقل أجهزتك إليها.</p></details>
           <details class="reveal"><summary data-i18n="faq.q10">هل أستطيع إيقافه خلال ساعات العمل على جهاز الشركة؟</summary><p data-i18n="faq.a10">نعم. من الإعدادات فعّل «إيقاف تلقائي بأوقات محددة» واختر الأيام والساعات. خلالها لا يقرأ CoShare الحافظة ولا يرسل ولا يستقبل ولا يظهر على الشبكة إطلاقاً، وأجهزتك الأخرى تعرف جدوله فلا تحاول الاتصال به. ولو انتهى العمل مبكراً اضغط «استئناف اليوم».</p></details>
+          <details class="reveal"><summary data-i18n="faq.q11">كيف أعرف أن جهازاً انقطع عن المجموعة؟</summary><p data-i18n="faq.a11">يصلك إشعار عندما يتصل جهاز من مجموعاتك أو ينقطع، ومعه السبب إن كان معروفاً: خرج من الشبكة أو نام، أو دخل وقت الإيقاف، أو أوقف المشاركة. الانقطاع لثوانٍ لا يرسل شيئاً. ومن الإعدادات تشغّل الإشعارات أو توقفها، أو تختار إشعارات الدخول فقط أو الخروج فقط. على الآيفون تعمل ما دام «العمل الدائم بالخلفية» مفعّلاً.</p></details>
           <details class="reveal"><summary data-i18n="faq.q9">كم جهازاً أستطيع ربطه؟</summary><p data-i18n="faq.a9">لا يوجد حد عملي. لابتوبات وهواتف وتابلت معاً، كلها تستقبل في اللحظة نفسها.</p></details>
         </div>
       </div>

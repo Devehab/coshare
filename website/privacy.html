@@ -42,7 +42,7 @@
         <span class="kicker">الخصوصية</span>
         <h1>سياسة الخصوصية</h1>
         <p class="lead">صُمّم CoShare بحيث لا نستطيع رؤية بياناتك حتى لو أردنا: لا خوادم، ولا حسابات، ولا تحليلات. هذه الصفحة تشرح بالتفصيل ما يحدث لكل معلومة يتعامل معها التطبيق.</p>
-        <p class="doc-meta">آخر تحديث: ١٩ أكتوبر ٢٠٢٦ · تنطبق على تطبيقات CoShare لكل الأنظمة وعلى هذا الموقع</p>
+        <p class="doc-meta">آخر تحديث: ٢٢ أكتوبر ٢٠٢٦ · تنطبق على تطبيقات CoShare لكل الأنظمة وعلى هذا الموقع</p>
       </div>
 
       <div class="container doc-layout">
@@ -86,7 +86,8 @@
                   <tr><td>المجموعات: الاسم والمعرّف وكلمة السر</td><td>ليعود الجهاز لمجموعاته تلقائياً بعد إعادة التشغيل</td><td>عند مغادرة المجموعة أو حذف التطبيق</td></tr>
                   <tr><td>اسم الجهاز ومعرّف عشوائي له</td><td>لتتعرّف أجهزتك على بعضها</td><td>عند حذف التطبيق</td></tr>
                   <tr><td>عناوين أجهزتك في الشبكة المحلية وجداول أوقات إيقافها</td><td>لإعادة الاتصال بسرعة، ولعدم الاتصال بجهاز خلال أوقات إيقافه</td><td>تتحدّث تلقائياً، وتُحذف مع التطبيق</td></tr>
-                  <tr><td>الإعدادات</td><td>أوقات الإيقاف، مدة الاحتفاظ، صيغة الوقت وغيرها</td><td>عند حذف التطبيق</td></tr>
+                  <tr><td>معرّفات الأجهزة التي ظهرت في كل مجموعة</td><td>ليفرّق إشعار الأجهزة بين جهاز جديد انضم وجهاز عاد. بدون أسماء ولا عناوين</td><td>عند حذف التطبيق</td></tr>
+                  <tr><td>الإعدادات</td><td>أوقات الإيقاف، مدة الاحتفاظ، صيغة الوقت، الإشعارات وغيرها</td><td>عند حذف التطبيق</td></tr>
                 </tbody>
               </table>
             </div>
@@ -128,6 +129,7 @@
                 <thead><tr><th>الإذن</th><th>الأنظمة</th><th>لماذا</th></tr></thead>
                 <tbody>
                   <tr><td>الشبكة المحلية</td><td>iOS، macOS</td><td>لاكتشاف أجهزتك والتواصل معها.</td></tr>
+                  <tr><td>الإشعارات</td><td>iOS، macOS، Android</td><td>لإعلامك عندما يتصل جهاز من مجموعاتك أو ينقطع. يُنشئها التطبيق على جهازك نفسه، ولا تمر بأي خدمة إشعارات خارجية. يمكنك إيقافها من الإعدادات.</td></tr>
                   <tr><td>اللصق من التطبيقات الأخرى</td><td>iOS</td><td>لقراءة ما تنسخه وإرساله لأجهزتك.</td></tr>
                   <tr><td>الكاميرا</td><td>iOS، macOS، Windows، Linux</td><td>لمسح رمز QR للدعوة فقط. الصورة تُحلَّل في الذاكرة على جهازك، ولا تُحفظ ولا تُرسل.</td></tr>
                   <tr><td>العمل بالخلفية (صوت صامت)</td><td>iOS</td><td>ليبقى التطبيق يعمل ويستقبل. لا يستخدم الميكروفون ولا يسجّل أي صوت.</td></tr>
@@ -186,7 +188,7 @@
         <span class="kicker">Privacy</span>
         <h1>Privacy Policy</h1>
         <p class="lead">CoShare is built so that we couldn’t see your data even if we wanted to: no servers, no accounts, no analytics. This page explains exactly what happens to every piece of information the app handles.</p>
-        <p class="doc-meta">Last updated: 19 October 2026 · Applies to the CoShare apps on every platform and to this website</p>
+        <p class="doc-meta">Last updated: 22 October 2026 · Applies to the CoShare apps on every platform and to this website</p>
       </div>
 
       <div class="container doc-layout">
@@ -230,7 +232,8 @@
                   <tr><td>Groups: name, ID and password</td><td>So the device rejoins its groups automatically after a restart</td><td>When you leave the group or delete the app</td></tr>
                   <tr><td>Device name and a random device ID</td><td>So your devices recognise each other</td><td>When you delete the app</td></tr>
                   <tr><td>Local-network addresses of your devices and their quiet-hour schedules</td><td>To reconnect quickly, and never to contact a device during its quiet hours</td><td>Updated automatically; deleted with the app</td></tr>
-                  <tr><td>Settings</td><td>Quiet hours, retention, time format and so on</td><td>When you delete the app</td></tr>
+                  <tr><td>IDs of the devices seen in each group</td><td>So device notifications can tell a new device from one coming back. No names or addresses</td><td>When you delete the app</td></tr>
+                  <tr><td>Settings</td><td>Quiet hours, retention, time format, notifications and so on</td><td>When you delete the app</td></tr>
                 </tbody>
               </table>
             </div>
@@ -272,6 +275,7 @@
                 <thead><tr><th>Permission</th><th>Platforms</th><th>Why</th></tr></thead>
                 <tbody>
                   <tr><td>Local network</td><td>iOS, macOS</td><td>To discover and talk to your devices.</td></tr>
+                  <tr><td>Notifications</td><td>iOS, macOS, Android</td><td>To tell you when a device in your groups connects or disconnects. The app creates them on your device itself; they never go through an outside notification service. You can turn them off in Settings.</td></tr>
                   <tr><td>Paste from other apps</td><td>iOS</td><td>To read what you copy and send it to your devices.</td></tr>
                   <tr><td>Camera</td><td>iOS, macOS, Windows, Linux</td><td>Only to scan a group’s invite QR code. Frames are analysed in memory on your device, never saved or sent.</td></tr>
                   <tr><td>Background (silent audio)</td><td>iOS</td><td>To keep the app running and receiving. It never uses the microphone or records anything.</td></tr>

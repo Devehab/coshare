@@ -358,6 +358,7 @@ html[dir="rtl"] .privacy-link svg { transform: scaleX(-1); }
 @media (max-width: 1080px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .grid-4 { grid-template-columns: 1fr; } }
 .feature-card { padding: 24px; }
+.new-tag { display: inline-block; vertical-align: 2px; margin-inline-start: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; line-height: 1.5; background: var(--signal); color: var(--on-signal); }
 .feature-card h3 { font-size: 18px; margin-top: 16px; }
 .feature-card p { font-size: 15px; }
 .feature-card.highlight { background: var(--invert-bg); border-color: var(--invert-bg); }
